@@ -104,10 +104,12 @@
         let proposals = [];
         const employees = ['John Smith', 'Jane Smith', 'Mike Ross', 'Harvey Specter', 'Louis Litt', 'Jessica Pearson', 'Maria Garcia', 'Peter Nielsen', 'Klaus Schmidt', 'Chen Wei', 'Lars Jensen', 'Susan O\'Connell', 'Freja Jensen', 'Aksel Pedersen', 'Sofia Larsen', 'Mikael Persson', 'Carlos Ruiz', 'Ingrid Johansson', 'Fatima Al-Jamil', 'David Chen', 'Olga Petrova', 'Ben Carter', 'Hans Zimmerman', 'Liam Murphy', 'Priya Singh', 'Marco Rossi', 'Emma Nielsen', 'Anders Eriksen', 'Isabella Christensen', 'William Olsen', 'Olivia Poulsen', 'Noah Jørgensen'];
         const state = {
-            currentPage: 'home', // home, approverList, approverDetails, employeeHome, employeeList, newIP
+            currentPage: 'home', // home, approverList, approverDetails, employeeHome, employeeList, newIP, onePager
             selectedProposalId: null,
             language: 'EN-English',
             approverStatusFilter: 'All',
+            isFormDirty: false,
+            navigatingTo: null,
         };
 
         // --- DATA FETCHING ---
@@ -137,8 +139,14 @@
 
         // --- ROUTING/NAVIGATION ---
         function navigate(page, proposalId = null) {
+            if (state.isFormDirty) {
+                state.navigatingTo = { page, proposalId };
+                showModal('discardConfirm');
+                return;
+            }
             state.currentPage = page;
             state.selectedProposalId = proposalId;
+            state.isFormDirty = false;
             render();
         }
 
@@ -169,6 +177,9 @@
                 case 'implementedDetails':
                     appContainer.innerHTML = renderImplementedStatusPage();
                     break;
+                case 'onePager':
+                    appContainer.innerHTML = renderOnePagerPage();
+                    break;
             }
             addEventListeners();
         }
@@ -191,7 +202,7 @@
                                 <i class="fas fa-user fa-3x mb-2"></i>
                                 <p>Employee view</p>
                             </div>
-                            <a href="#" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                            <a href="https://app.powerbi.com/Redirect?action=OpenReport&appId=d72cb608-070f-45ff-9271-c0654b7f3f72&reportObjectId=71acc815-077e-4dd1-82ac-7ec0ca318ab8&ctid=dabd5d90-87c2-44c9-93cd-783e03236e40&reportPage=ReportSection&pbi_source=appShareLink&portalSessionId=f2c02284-a535-46c6-832c-187512b0e630" target="_blank" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
                                 <i class="fas fa-chart-line fa-3x mb-2"></i>
                                 <p>IP Tracker</p>
                             </a>
@@ -238,6 +249,7 @@
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Just DID IT</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal Title</th>
                                     </tr>
@@ -252,6 +264,7 @@
                                                 <button class="print-preview-btn icon-btn ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status !== 'Implemented' ? 'disabled' : ''} data-id="${p.id}"><i class="fas fa-eye"></i></button>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.justDidIt ? 'YES' : 'NO'}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <span class="status-badge ${statusClass}">${p.status}</span>
                                             </td>
@@ -287,7 +300,7 @@
                         <h2 class="text-xl font-bold">Approver</h2>
                          <button id="back-to-list-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
                     </header>
-                    <div class="card p-4 rounded-b-lg space-y-4">
+                    <div id="ip-details-form" class="card p-4 rounded-b-lg space-y-4">
                         <div class="border-b pb-2">
                             <p class="text-sm text-gray-500">IP ${proposal.id}</p>
                             <h3 class="text-lg font-semibold">${proposal.title}</h3>
@@ -336,7 +349,7 @@
              return `
                 <div class="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
                     <div class="text-center w-full max-w-md">
-                        <button id="home-btn" class="absolute top-4 left-4 icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
+                         <button id="home-btn" class="absolute top-4 left-4 icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
                         <h1 class="text-2xl font-light">Improvement Proposal System</h1>
                         <h2 class="text-4xl font-bold my-4">WELCOME ${currentUser.name.toUpperCase()}!</h2>
                         <div class="my-8">
@@ -372,7 +385,6 @@
                         <h2 class="text-xl font-bold">My Improvement Proposals</h2>
                         <div>
                             <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
-                            <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
                         </div>
                     </header>
                     <div class="card p-4 rounded-b-lg">
@@ -420,7 +432,6 @@
                         <h2 class="text-xl font-bold">New Improvement Proposal</h2>
                         <div>
                             <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
-                            <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
                         </div>
                     </header>
                     <form id="new-ip-form" class="card p-4 rounded-b-lg space-y-4">
@@ -447,9 +458,11 @@
                                 </div>
                                 <div class="mb-4">
                                     <h4 class="font-semibold mb-2">Origin</h4>
-                                    <div class="space-y-2">
-                                        <input type="text" id="new-ip-origin" placeholder="e.g., Assembly Line 1, Bjerringbro" class="w-full border-gray-300 rounded-md" required>
-                                    </div>
+                                    <input type="text" id="new-ip-origin" placeholder="e.g., Assembly Line 1, Bjerringbro" class="w-full border-gray-300 rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <h4 class="font-semibold mb-2">Potential Saving</h4>
+                                    <input type="text" id="new-ip-saving" placeholder="e.g., 5000 DKK" class="w-full border-gray-300 rounded-md">
                                 </div>
                             </div>
                             <div>
@@ -555,6 +568,56 @@
             `;
         }
         
+        function renderOnePagerPage() {
+            const proposal = proposals.find(p => p.id == state.selectedProposalId);
+            if (!proposal) return `<p>Proposal not found.</p>`;
+
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full relative">
+                     <div class="absolute top-6 right-6 flex space-x-2">
+                        <button class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-file-pdf"></i></button>
+                        <button class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-share-alt"></i></button>
+                        <button id="back-to-list-btn" class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="card p-8 mx-auto max-w-3xl">
+                        <header class="flex justify-between items-start mb-4 border-b-2 border-gray-800 pb-2">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">IP ${proposal.id}</h2>
+                                <h3 class="text-xl text-gray-600">${proposal.title}</h3>
+                            </div>
+                            <div class="text-right">
+                                <img src="https://www.grundfos.com/content/dam/grundfos/brand-assets/grundfos-logo-blue.svg" alt="Grundfos Logo" class="h-8">
+                                <p class="text-sm text-gray-500 mt-1">${proposal.origin}</p>
+                            </div>
+                        </header>
+                        <main class="grid grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">BEFORE</h4>
+                                <p class="bg-red-50 p-3 rounded-lg text-gray-700 mb-4 min-h-[100px]">${proposal.before}</p>
+                                ${proposal.beforeImage ? `<img src="${proposal.beforeImage}" class="rounded-lg w-full">` : ''}
+                            </div>
+                             <div>
+                                <h4 class="font-bold text-lg mb-2">AFTER</h4>
+                                <p class="bg-green-50 p-3 rounded-lg text-gray-700 mb-4 min-h-[100px]">${proposal.after}</p>
+                                ${proposal.afterImage ? `<img src="${proposal.afterImage}" class="rounded-lg w-full">` : ''}
+                            </div>
+                        </main>
+                        <footer class="mt-6 border-t pt-4 grid grid-cols-3 gap-4 text-sm">
+                            <div><span class="font-bold">Proposer:</span> ${proposal.proposer}</div>
+                            <div><span class="font-bold">Impact:</span> ${Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
+                            <div><span class="font-bold">Potential Saving:</span> ${proposal.potentialSaving || 'N/A'}</div>
+                            <div class="col-span-3 grid grid-cols-4 gap-2 text-center">
+                                <div class="p-2 rounded ${proposal.riskAssessment ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Risk Assessment</span></div>
+                                <div class="p-2 rounded ${proposal.vpcDone ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">VPC Done</span></div>
+                                <div class="p-2 rounded ${proposal.justDidIt ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Just DID IT</span></div>
+                                <div class="p-2 rounded ${proposal.bestPractice ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Best Practice</span></div>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderModal() {
             return `
                 <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
@@ -569,21 +632,33 @@
             const overlay = document.getElementById('modal-overlay');
             const content = document.getElementById('modal-content');
             
-            if (type === 'saveConfirm') {
-                content.innerHTML = `<h3 class="text-xl font-bold mb-4">Are you sure you want to save the change?</h3><div class="flex justify-center space-x-4"><button id="modal-no" class="btn-secondary">NO</button><button id="modal-yes" class="btn-primary">YES</button></div>`;
-            } else if (type === 'saved') {
-                 content.innerHTML = `<i class="fas fa-check-circle text-green-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">Change saved!</h3>`;
-            } else if (type === 'implemented') {
-                 content.innerHTML = `<i class="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP implemented!</h3>`;
-            } else if (type === 'submitted') {
-                 content.innerHTML = `<i class="fas fa-paper-plane text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP Submitted!</h3>`;
+            let modalHtml = '';
+            switch(type) {
+                case 'saveConfirm':
+                    modalHtml = `<h3 class="text-xl font-bold mb-4">Are you sure you want to save the change?</h3><div class="flex justify-center space-x-4"><button id="modal-no" class="btn-secondary">NO</button><button id="modal-yes" class="btn-primary">YES</button></div>`;
+                    break;
+                case 'discardConfirm':
+                     modalHtml = `<h3 class="text-xl font-bold mb-4">Discard unsaved changes?</h3><div class="flex justify-center space-x-4"><button id="modal-no" class="btn-secondary">NO</button><button id="modal-yes" class="btn-primary">YES</button></div>`;
+                    break;
+                case 'saved':
+                    modalHtml = `<i class="fas fa-check-circle text-green-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">Change saved!</h3>`;
+                    break;
+                case 'implemented':
+                    modalHtml = `<i class="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP implemented!</h3>`;
+                    break;
+                case 'submitted':
+                    modalHtml = `<i class="fas fa-paper-plane text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP Submitted!</h3>`;
+                    break;
             }
-
+            content.innerHTML = modalHtml;
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
 
-            if (type === 'saved' || type === 'implemented' || type === 'submitted') {
-                setTimeout(() => {
+            if (type.includes('Confirm')) {
+                 document.getElementById('modal-no').addEventListener('click', hideModal);
+                 document.getElementById('modal-yes').addEventListener('click', callback);
+            } else {
+                 setTimeout(() => {
                     hideModal();
                     if(callback) callback();
                 }, 1500);
@@ -592,8 +667,10 @@
 
         function hideModal() {
             const overlay = document.getElementById('modal-overlay');
-            overlay.classList.add('hidden');
-            overlay.classList.remove('flex');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
         }
 
 
@@ -602,9 +679,9 @@
             // Home Page
             document.getElementById('approver-view-btn')?.addEventListener('click', () => navigate('approverList'));
             document.getElementById('employee-view-btn')?.addEventListener('click', () => navigate('employeeHome'));
+            document.getElementById('home-btn')?.addEventListener('click', () => navigate('home'));
 
             // General Navigation
-            document.getElementById('home-btn')?.addEventListener('click', () => navigate('home'));
             document.getElementById('back-to-list-btn')?.addEventListener('click', () => navigate('approverList'));
             document.getElementById('back-to-employee-home-btn')?.addEventListener('click', () => navigate('employeeHome'));
             document.getElementById('back-to-details-btn')?.addEventListener('click', () => navigate('approverDetails', state.selectedProposalId));
@@ -615,23 +692,36 @@
                 render();
             });
 
-            // Approver List
+            // Approver List Buttons
             document.querySelectorAll('.view-details-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    navigate('approverDetails', id);
-                });
+                btn.addEventListener('click', (e) => navigate('approverDetails', e.currentTarget.dataset.id));
+            });
+            document.querySelectorAll('.print-preview-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => navigate('onePager', e.currentTarget.dataset.id));
             });
 
             // IP Details Page
             document.getElementById('save-changes-btn')?.addEventListener('click', () => {
-                const newStatus = document.getElementById('status-select').value;
-                if (newStatus === 'Implemented') {
-                    navigate('implementedDetails', state.selectedProposalId);
-                } else {
-                    showModal('saveConfirm');
-                }
+                showModal('saveConfirm', () => {
+                    const proposal = proposals.find(p => p.id == state.selectedProposalId);
+                    const newStatus = document.getElementById('status-select').value;
+                    
+                    if (newStatus === 'Implemented') {
+                        hideModal();
+                        navigate('implementedDetails', state.selectedProposalId);
+                    } else {
+                        proposal.status = newStatus;
+                        proposal.responsible = document.getElementById('responsible-select').value;
+                        showModal('saved', () => navigate('approverList'));
+                    }
+                });
             });
+            
+            // Dirty form check
+            document.querySelectorAll('#ip-details-form select')?.forEach(el => {
+                el.addEventListener('change', () => state.isFormDirty = true);
+            });
+
 
             // Employee Home
             document.getElementById('new-ip-btn')?.addEventListener('click', () => navigate('newIP'));
@@ -647,7 +737,6 @@
                         const container = document.getElementById(containerId);
                         const imageUrl = URL.createObjectURL(file);
                         container.innerHTML = `<img src="${imageUrl}" alt="Selected image preview">`;
-                        console.log(`SIMULATION: Displaying local image. In a real app, you would now upload '${file.name}' to a server.`);
                     }
                 });
             }
@@ -668,12 +757,12 @@
                     after: document.getElementById('new-ip-after').value,
                     responsible: document.getElementById('new-ip-responsible').value,
                     categories: Array.from(document.querySelectorAll('#new-ip-categories input:checked')).map(el => el.value),
-                    // In a real app, you would handle the file upload and get a URL here
                     beforeImage: document.querySelector('#before-image-container img')?.src || '',
                     afterImage: document.querySelector('#after-image-container img')?.src || '',
-                    potentialSaving: '', financePartner: '', riskAssessment: false, vpcDone: false, validatedByFinance: false, bestPractice: false
+                    potentialSaving: document.getElementById('new-ip-saving').value, 
+                    financePartner: '', riskAssessment: false, vpcDone: false, validatedByFinance: false, bestPractice: false
                 };
-                proposals.unshift(newProposal); // Add to the beginning of the array
+                proposals.unshift(newProposal);
                 showModal(status === 'Draft' ? 'saved' : 'submitted', () => navigate('employeeList'));
             }
 
@@ -689,15 +778,8 @@
 
             // Implemented Status Page
             document.getElementById('confirm-implementation-btn')?.addEventListener('click', () => {
-                showModal('saveConfirm');
-            });
-            
-            // Modal Buttons
-            document.getElementById('modal-no')?.addEventListener('click', hideModal);
-            document.getElementById('modal-yes')?.addEventListener('click', () => {
-                const proposal = proposals.find(p => p.id == state.selectedProposalId);
-                if (state.currentPage === 'implementedDetails') {
-                    // Update proposal with implementation details
+                showModal('saveConfirm', () => {
+                    const proposal = proposals.find(p => p.id == state.selectedProposalId);
                     const form = document.getElementById('implementation-form');
                     proposal.status = 'Implemented';
                     proposal.riskAssessment = form.querySelector('input[name="risk"]:checked').value === 'true';
@@ -707,14 +789,18 @@
                     }
                     proposal.bestPractice = form.querySelector('#best-practice-checkbox').checked;
                     showModal('implemented', () => navigate('approverList'));
-                } else { // This is for the regular save on the details page
-                    const newStatus = document.getElementById('status-select').value;
-                    const newResponsible = document.getElementById('responsible-select').value;
-                    proposal.status = newStatus;
-                    proposal.responsible = newResponsible;
-                    showModal('saved', () => navigate('approverList'));
-                }
+                });
             });
+
+            // Discard changes modal logic
+            if (state.navigatingTo) {
+                document.getElementById('modal-yes')?.addEventListener('click', () => {
+                    state.isFormDirty = false;
+                    hideModal();
+                    navigate(state.navigatingTo.page, state.navigatingTo.proposalId);
+                    state.navigatingTo = null;
+                });
+            }
         }
 
         // --- INITIALIZATION ---
