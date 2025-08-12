@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improvement Proposal System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .main-bg {
+            background-color: #002B49; /* Dark blue from PDF */
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .btn-primary {
+            background-color: #005A9C; /* A slightly lighter blue */
+            color: white;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #004A8C;
+        }
+        .btn-secondary {
+            background-color: #E0E0E0;
+            color: #333333;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #D0D0D0;
+        }
+        .icon-btn {
+            background-color: #F0F4F8;
+            border-radius: 9999px;
+            padding: 0.5rem;
+            color: #002B49;
+            transition: background-color 0.3s;
+        }
+        .icon-btn:hover {
+            background-color: #E0E8F0;
+        }
+        #loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #005A9C;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="app" class="max-w-4xl mx-auto flex items-center justify-center min-h-screen">
+        <div id="loader"></div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        const currentUser = { name: "John" };
+        let proposals = [];
+        const employees = ['John Smith', 'Jane Smith', 'Mike Ross', 'Harvey Specter', 'Louis Litt', 'Jessica Pearson', 'Maria Garcia', 'Peter Nielsen', 'Klaus Schmidt', 'Chen Wei', 'Lars Jensen', 'Susan O\'Connell', 'Freja Jensen', 'Aksel Pedersen', 'Sofia Larsen', 'Mikael Persson', 'Carlos Ruiz', 'Ingrid Johansson', 'Fatima Al-Jamil', 'David Chen', 'Olga Petrova', 'Ben Carter', 'Hans Zimmerman', 'Liam Murphy', 'Priya Singh', 'Marco Rossi', 'Emma Nielsen', 'Anders Eriksen', 'Isabella Christensen', 'William Olsen', 'Olivia Poulsen', 'Noah Jørgensen'];
+        const state = {
+            currentPage: 'home', // home, approverList, approverDetails, employeeHome, employeeList, newIP
+            selectedProposalId: null,
+            language: 'EN-English',
+        };
+
+        // --- DATA FETCHING ---
+        async function loadData() {
+            const url = 'https://raw.githubusercontent.com/MadsBroder/IP/main/ip_data_csv.csv';
+            try {
+                const response = await fetch(url);
+                const csvText = await response.text();
+                // Use PapaParse to convert CSV to JSON
+                const parsedData = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    transform: (value, header) => {
+                        // Convert boolean-like strings to actual booleans
+                        if (value.toLowerCase() === 'true') return true;
+                        if (value.toLowerCase() === 'false') return false;
+                        // Split categories into an array
+                        if (header === 'categories') return value.split(',').map(s => s.trim());
+                        return value;
+                    }
+                });
+                proposals = parsedData.data;
+                console.log("Data loaded successfully:", proposals);
+                render(); // Initial render after data is loaded
+            } catch (error) {
+                console.error("Failed to load or parse CSV data:", error);
+                document.getElementById('app').innerHTML = `<div class="text-center text-red-500">Failed to load proposal data. Please check the console for errors.</div>`;
+            }
+        }
+
+        // --- ROUTING/NAVIGATION ---
+        function navigate(page, proposalId = null) {
+            state.currentPage = page;
+            state.selectedProposalId = proposalId;
+            render();
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function render() {
+            const appContainer = document.getElementById('app');
+            appContainer.innerHTML = ''; // Clear previous content
+
+            switch (state.currentPage) {
+                case 'home':
+                    appContainer.innerHTML = renderHomePage();
+                    break;
+                case 'approverList':
+                    appContainer.innerHTML = renderApproverListPage();
+                    break;
+                case 'approverDetails':
+                    appContainer.innerHTML = renderIPDetailsPage('approver');
+                    break;
+                case 'employeeHome':
+                    appContainer.innerHTML = renderEmployeeHomePage();
+                    break;
+                case 'employeeList':
+                     appContainer.innerHTML = renderEmployeeListPage();
+                    break;
+                case 'newIP':
+                    appContainer.innerHTML = renderNewIPPage();
+                    break;
+                case 'implementedDetails':
+                    appContainer.innerHTML = renderImplementedStatusPage();
+                    break;
+            }
+            addEventListeners();
+        }
+
+        function renderHomePage() {
+            return `
+                <div class="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
+                    <div class="text-center w-full max-w-md">
+                        <h1 class="text-2xl font-light">Improvement Proposal System</h1>
+                        <h2 class="text-4xl font-bold my-4">WELCOME ${currentUser.name.toUpperCase()}!</h2>
+                        <div class="my-8">
+                            <i class="fas fa-lightbulb fa-4x text-yellow-300"></i>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="approver-view-btn" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-check-circle fa-3x mb-2"></i>
+                                <p>Approver view</p>
+                            </div>
+                            <div id="employee-view-btn" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-user fa-3x mb-2"></i>
+                                <p>Employee view</p>
+                            </div>
+                            <a href="#" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-chart-line fa-3x mb-2"></i>
+                                <p>IP Tracker</p>
+                            </a>
+                            <div class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-headset fa-3x mb-2"></i>
+                                <p>Support</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-between items-center text-sm">
+                            <select id="language-select" class="bg-transparent border border-white/50 rounded-md px-2 py-1">
+                                <option value="EN-English" ${state.language === 'EN-English' ? 'selected' : ''}>EN-English</option>
+                                <option value="ES-Español" ${state.language === 'ES-Español' ? 'selected' : ''}>ES-Español</option>
+                                <option value="DE-Deutsch" ${state.language === 'DE-Deutsch' ? 'selected' : ''}>DE-Deutsch</option>
+                            </select>
+                            <span>Ver. 1.0</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderApproverListPage() {
+            const statusOptions = ['All', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full">
+                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-xl font-bold">Approver</h2>
+                        <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
+                    </header>
+                    <div class="card p-4 rounded-b-lg">
+                        <div class="mb-4">
+                            <label for="status-filter" class="block text-sm font-medium text-gray-700">Choose preferred list of IPs:</label>
+                            <select id="status-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                ${statusOptions.map(s => `<option>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Just DID IT</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal Title</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${proposals.map(p => `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="view-details-btn icon-btn" data-id="${p.id}"><i class="fas fa-plus"></i></button>
+                                                <button class="print-preview-btn icon-btn ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status !== 'Implemented' ? 'disabled' : ''} data-id="${p.id}"><i class="fas fa-eye"></i></button>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.justDidIt ? 'YES' : 'NO'}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${p.title}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderIPDetailsPage(viewType) {
+            const proposal = proposals.find(p => p.id == state.selectedProposalId);
+            if (!proposal) return `<p>Proposal not found.</p>`;
+            
+            const statuses = ['Received', 'Accepted', 'Request for implementation', 'Implemented'];
+
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full">
+                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-xl font-bold">Approver</h2>
+                         <button id="back-to-list-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
+                    </header>
+                    <div class="card p-4 rounded-b-lg space-y-4">
+                        <div class="border-b pb-2">
+                            <p class="text-sm text-gray-500">IP ${proposal.id}</p>
+                            <h3 class="text-lg font-semibold">${proposal.title}</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div><span class="font-semibold">Proposer:</span> ${proposal.proposer}</div>
+                            <div><span class="font-semibold">Date of proposal:</span> ${proposal.date}</div>
+                            <div><span class="font-semibold">Current status:</span> <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${proposal.status}</span></div>
+                            <div class="md:col-span-2"><span class="font-semibold">Categories:</span> ${Array.isArray(proposal.categories) ? proposal.categories.join(', ') : proposal.categories}</div>
+                            <div><span class="font-semibold">Origin:</span> ${proposal.origin}</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold mb-1">BEFORE IMPROVEMENT</h4>
+                                <p class="text-sm text-gray-600 p-2 bg-gray-50 rounded">${proposal.before}</p>
+                                <div class="mt-2 bg-gray-200 h-32 rounded flex items-center justify-center"><i class="fas fa-image fa-3x text-gray-400"></i></div>
+                            </div>
+                             <div>
+                                <h4 class="font-semibold mb-1">AFTER IMPROVEMENT</h4>
+                                <p class="text-sm text-gray-600 p-2 bg-gray-50 rounded">${proposal.after}</p>
+                                <div class="mt-2 bg-gray-200 h-32 rounded flex items-center justify-center"><i class="fas fa-image fa-3x text-gray-400"></i></div>
+                            </div>
+                        </div>
+                        <div class="flex items-end space-x-4 border-t pt-4">
+                            <div class="flex-grow">
+                                <label class="block text-sm font-medium text-gray-700">Responsible</label>
+                                <select id="responsible-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    ${employees.map(e => `<option ${e === proposal.responsible ? 'selected' : ''}>${e}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="flex-grow">
+                                <label class="block text-sm font-medium text-gray-700">New Status</label>
+                                <select id="status-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    ${statuses.map(s => `<option ${s === proposal.status ? 'selected' : ''}>${s}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button id="save-changes-btn" class="btn-primary"><i class="fas fa-save"></i> Save</button>
+                        </div>
+                    </div>
+                </div>
+                ${renderModal()}
+            `;
+        }
+        
+        function renderEmployeeHomePage() {
+             return `
+                <div class="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
+                    <div class="text-center w-full max-w-md">
+                        <button id="home-btn" class="absolute top-4 left-4 icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
+                        <h1 class="text-2xl font-light">Improvement Proposal System</h1>
+                        <h2 class="text-4xl font-bold my-4">WELCOME ${currentUser.name.toUpperCase()}!</h2>
+                        <div class="my-8">
+                            <i class="fas fa-lightbulb fa-4x text-yellow-300"></i>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div id="new-ip-btn" class="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-plus-circle fa-3x mb-2"></i>
+                                <p class="text-xl">New IP</p>
+                            </div>
+                            <div id="my-ips-btn" class="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
+                                <i class="fas fa-list-alt fa-3x mb-2"></i>
+                                <p class="text-xl">My IPs</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-between items-center text-sm">
+                            <select id="language-select" class="bg-transparent border border-white/50 rounded-md px-2 py-1">
+                                <option value="EN-English" ${state.language === 'EN-English' ? 'selected' : ''}>EN-English</option>
+                            </select>
+                            <span>Ver. 1.0</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderEmployeeListPage() {
+            const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
+            const userProposals = proposals.filter(p => p.proposer === currentUser.name);
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full">
+                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-xl font-bold">My Improvement Proposals</h2>
+                        <div>
+                            <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
+                            <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
+                        </div>
+                    </header>
+                    <div class="card p-4 rounded-b-lg">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Filter by status:</label>
+                            <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                ${statusOptions.map(s => `<option>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal Title</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${userProposals.map(p => `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button class="view-details-btn icon-btn" data-id="${p.id}"><i class="fas fa-pencil-alt"></i></button>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${p.status === 'Draft' ? 'bg-gray-200 text-gray-800' : 'bg-green-100 text-green-800'}">${p.status}</span></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${p.title}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNewIPPage() {
+            const newId = Math.floor(100000 + Math.random() * 900000);
+            const categories = ['Environment & Energy', 'Health & Safety', 'Quality', 'Inventory', 'Delivery', 'Product change', 'Process change', 'Cost', 'People'];
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full">
+                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-xl font-bold">New Improvement Proposal</h2>
+                        <div>
+                            <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
+                            <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
+                        </div>
+                    </header>
+                    <div class="card p-4 rounded-b-lg space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <p class="text-sm text-gray-500">IP ${newId} (Draft)</p>
+                                <input type="text" placeholder="Insert title of the proposal" class="text-lg font-semibold border-gray-300 rounded-md w-full">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <label for="just-did-it" class="font-semibold">Just DID IT</label>
+                                <input type="checkbox" id="just-did-it" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Left Column -->
+                            <div>
+                                <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+                                    <div><span class="font-semibold">Proposer:</span> ${currentUser.name}</div>
+                                    <div><span class="font-semibold">Date:</span> ${new Date().toISOString().slice(0,10)}</div>
+                                    <div><span class="font-semibold">Status:</span> Draft</div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h4 class="font-semibold mb-2">Categories</h4>
+                                    <div class="grid grid-cols-2 gap-2 text-sm">
+                                        ${categories.map(cat => `
+                                            <label class="flex items-center space-x-2">
+                                                <input type="checkbox" class="rounded">
+                                                <span>${cat}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h4 class="font-semibold mb-2">Origin</h4>
+                                    <div class="space-y-2">
+                                        <select class="w-full border-gray-300 rounded-md"><option>Choose company</option></select>
+                                        <select class="w-full border-gray-300 rounded-md"><option>Choose plant</option></select>
+                                        <select class="w-full border-gray-300 rounded-md"><option>Choose totem</option></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div>
+                                <div class="mb-4">
+                                    <h4 class="font-semibold mb-1">BEFORE IMPROVEMENT</h4>
+                                    <textarea rows="3" class="w-full border-gray-300 rounded-md" placeholder="Describe the situation before..."></textarea>
+                                    <div class="mt-2 bg-gray-200 h-24 rounded flex items-center justify-center cursor-pointer hover:bg-gray-300">
+                                        <i class="fas fa-camera fa-2x text-gray-500"></i>
+                                        <span class="ml-2">Add Photo</span>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <h4 class="font-semibold mb-1">AFTER IMPROVEMENT</h4>
+                                    <textarea rows="3" class="w-full border-gray-300 rounded-md" placeholder="Describe the situation after..."></textarea>
+                                    <div class="mt-2 bg-gray-200 h-24 rounded flex items-center justify-center cursor-pointer hover:bg-gray-300">
+                                        <i class="fas fa-camera fa-2x text-gray-500"></i>
+                                        <span class="ml-2">Add Photo</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4 space-y-2">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Responsible for implementation/approval</label>
+                                <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    <option>Choose employee...</option>
+                                    ${employees.map(e => `<option>${e}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="flex justify-end space-x-2">
+                                <button class="btn-secondary">Save as Draft</button>
+                                <button class="btn-primary">Submit for Approval</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderImplementedStatusPage() {
+            const proposal = proposals.find(p => p.id == state.selectedProposalId);
+            return `
+                <div class="bg-gray-100 p-4 min-h-screen w-full">
+                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-xl font-bold">Confirm Implementation</h2>
+                        <button id="back-to-details-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
+                    </header>
+                    <div class="card p-6 rounded-b-lg space-y-6">
+                        <h3 class="text-lg font-semibold text-center">IP ${proposal.id} - ${proposal.title}</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium">Risk assessment performed:</span>
+                                <div class="flex items-center space-x-4">
+                                    <label class="flex items-center space-x-2"><input type="radio" name="risk" class="h-4 w-4"><span>NO</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="risk" class="h-4 w-4"><span>YES</span></label>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium">VPC done (if needed):</span>
+                                <div class="flex items-center space-x-4">
+                                    <label class="flex items-center space-x-2"><input type="radio" name="vpc" class="h-4 w-4"><span>NO</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="vpc" class="h-4 w-4"><span>YES</span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${proposal.potentialSaving ? `
+                        <div class="border-t pt-4 space-y-4">
+                            <h4 class="font-semibold text-gray-800">Finance Validation</h4>
+                            <div class="grid grid-cols-2 gap-4 items-end">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Potential Saving</label>
+                                    <input type="text" value="${proposal.potentialSaving}" class="mt-1 w-full border-gray-300 rounded-md bg-gray-100" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Finance partner</label>
+                                    <div class="flex items-center space-x-2">
+                                        <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                            ${employees.map(e => `<option ${e === proposal.financePartner ? 'selected' : ''}>${e}</option>`).join('')}
+                                        </select>
+                                        <button class="icon-btn text-blue-600"><i class="fas fa-envelope"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span class="font-medium">Validated by finance:</span>
+                                <div class="flex items-center space-x-4">
+                                    <label class="flex items-center space-x-2"><input type="radio" name="finance" class="h-4 w-4"><span>NO</span></label>
+                                    <label class="flex items-center space-x-2"><input type="radio" name="finance" class="h-4 w-4"><span>YES</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="border-t pt-4 flex justify-between items-center">
+                            <label class="flex items-center space-x-2 font-medium">
+                                <input type="checkbox" class="h-5 w-5 rounded">
+                                <span>Mark as Best Practice</span>
+                            </label>
+                            <button id="confirm-implementation-btn" class="btn-primary"><i class="fas fa-check"></i> Confirm Implementation</button>
+                        </div>
+                    </div>
+                </div>
+                ${renderModal()}
+            `;
+        }
+        
+        function renderModal() {
+            return `
+                <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                    <div id="modal-content" class="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm">
+                        <!-- Modal content will be injected here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        function showModal(type) {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            
+            if (type === 'saveConfirm') {
+                content.innerHTML = `
+                    <h3 class="text-xl font-bold mb-4">Are you sure you want to save the change?</h3>
+                    <div class="flex justify-center space-x-4">
+                        <button id="modal-no" class="btn-secondary">NO</button>
+                        <button id="modal-yes" class="btn-primary">YES</button>
+                    </div>
+                `;
+            } else if (type === 'saved') {
+                 content.innerHTML = `
+                    <i class="fas fa-check-circle text-green-500 fa-3x mb-4"></i>
+                    <h3 class="text-xl font-bold">Change saved!</h3>
+                `;
+            } else if (type === 'implemented') {
+                 content.innerHTML = `
+                    <i class="fas fa-award text-blue-500 fa-3x mb-4"></i>
+                    <h3 class="text-xl font-bold">IP implemented!</h3>
+                `;
+            }
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+
+            if (type === 'saved' || type === 'implemented') {
+                setTimeout(() => {
+                    hideModal();
+                    navigate('approverList');
+                }, 1500);
+            }
+        }
+
+        function hideModal() {
+            const overlay = document.getElementById('modal-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+
+        // --- EVENT LISTENERS ---
+        function addEventListeners() {
+            // Home Page
+            document.getElementById('approver-view-btn')?.addEventListener('click', () => navigate('approverList'));
+            document.getElementById('employee-view-btn')?.addEventListener('click', () => navigate('employeeHome'));
+
+            // General Navigation
+            document.getElementById('home-btn')?.addEventListener('click', () => navigate('home'));
+            document.getElementById('back-to-list-btn')?.addEventListener('click', () => navigate('approverList'));
+            document.getElementById('back-to-employee-home-btn')?.addEventListener('click', () => navigate('employeeHome'));
+            document.getElementById('back-to-details-btn')?.addEventListener('click', () => navigate('approverDetails', state.selectedProposalId));
+
+            // Approver List
+            document.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    navigate('approverDetails', id);
+                });
+            });
+
+            // IP Details Page
+            document.getElementById('save-changes-btn')?.addEventListener('click', () => {
+                const newStatus = document.getElementById('status-select').value;
+                if (newStatus === 'Implemented') {
+                    navigate('implementedDetails', state.selectedProposalId);
+                } else {
+                    showModal('saveConfirm');
+                }
+            });
+
+            // Employee Home
+            document.getElementById('new-ip-btn')?.addEventListener('click', () => navigate('newIP'));
+            document.getElementById('my-ips-btn')?.addEventListener('click', () => navigate('employeeList'));
+
+            // Implemented Status Page
+            document.getElementById('confirm-implementation-btn')?.addEventListener('click', () => {
+                showModal('saveConfirm');
+            });
+            
+            // Modal Buttons
+            document.getElementById('modal-no')?.addEventListener('click', hideModal);
+            document.getElementById('modal-yes')?.addEventListener('click', () => {
+                // Here you would normally save data to a server/database
+                const proposal = proposals.find(p => p.id == state.selectedProposalId);
+                if (state.currentPage === 'implementedDetails') {
+                    proposal.status = 'Implemented';
+                    showModal('implemented');
+                } else {
+                    const newStatus = document.getElementById('status-select').value;
+                    const newResponsible = document.getElementById('responsible-select').value;
+                    proposal.status = newStatus;
+                    proposal.responsible = newResponsible;
+                    showModal('saved');
+                }
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+    </script>
+
+</body>
+</html>
