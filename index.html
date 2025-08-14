@@ -3,88 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improvement Proposal System</title>
+    <title>Improvement Proposal System (React)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- PapaParse for CSV parsing -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .main-bg {
-            background-color: #002B49; /* Dark blue from PDF */
-        }
-        .card {
-            background-color: #FFFFFF;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        .btn-primary {
-            background-color: #005A9C; /* A slightly lighter blue */
-            color: white;
-            font-weight: 600;
-            border-radius: 0.375rem;
-            padding: 0.75rem 1.5rem;
-            transition: background-color 0.3s;
-        }
-        .btn-primary:hover {
-            background-color: #004A8C;
-        }
-        .btn-secondary {
-            background-color: #E0E0E0;
-            color: #333333;
-            font-weight: 600;
-            border-radius: 0.375rem;
-            padding: 0.75rem 1.5rem;
-            transition: background-color 0.3s;
-        }
-        .btn-secondary:hover {
-            background-color: #D0D0D0;
-        }
-        .icon-btn {
-            background-color: #F0F4F8;
-            border-radius: 9999px;
-            padding: 0.5rem;
-            color: #002B49;
-            transition: background-color 0.3s;
-        }
-        .icon-btn:hover {
-            background-color: #E0E8F0;
-        }
-        #loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #005A9C;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .image-container {
-            background-color: #e5e7eb; /* bg-gray-200 */
-            height: 12rem; /* h-48 */
-            border-radius: 0.375rem; /* rounded */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: capitalize;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .main-bg { background-color: #002B49; }
+        .card { background-color: #FFFFFF; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .btn-primary { background-color: #005A9C; color: white; font-weight: 600; border-radius: 0.375rem; padding: 0.75rem 1.5rem; transition: background-color: 0.3s; }
+        .btn-primary:hover { background-color: #004A8C; }
+        .btn-secondary { background-color: #E0E0E0; color: #333333; font-weight: 600; border-radius: 0.375rem; padding: 0.75rem 1.5rem; transition: background-color: 0.3s; }
+        .btn-secondary:hover { background-color: #D0D0D0; }
+        .icon-btn { background-color: #F0F4F8; border-radius: 9999px; padding: 0.5rem; color: #002B49; transition: background-color: 0.3s; }
+        .icon-btn:hover { background-color: #E0E8F0; }
+        #loader { border: 5px solid #f3f3f3; border-top: 5px solid #005A9C; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .image-container { background-color: #e5e7eb; height: 12rem; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .image-container img { width: 100%; height: 100%; object-fit: cover; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; text-transform: capitalize; }
         .status-Draft { background-color: #E5E7EB; color: #374151; }
         .status-Received { background-color: #DBEAFE; color: #1E40AF; }
         .status-Accepted { background-color: #D1FAE5; color: #065F46; }
@@ -93,721 +40,479 @@
     </style>
 </head>
 <body class="bg-gray-100">
+    <div id="root"></div>
 
-    <div id="app" class="max-w-4xl mx-auto flex items-center justify-center min-h-screen">
-        <div id="loader"></div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <script>
-        // --- GLOBAL STATE ---
-        const currentUser = { name: "John" };
-        let proposals = [];
-        const employees = ['John Smith', 'Jane Smith', 'Mike Ross', 'Harvey Specter', 'Louis Litt', 'Jessica Pearson', 'Maria Garcia', 'Peter Nielsen', 'Klaus Schmidt', 'Chen Wei', 'Lars Jensen', 'Susan O\'Connell', 'Freja Jensen', 'Aksel Pedersen', 'Sofia Larsen', 'Mikael Persson', 'Carlos Ruiz', 'Ingrid Johansson', 'Fatima Al-Jamil', 'David Chen', 'Olga Petrova', 'Ben Carter', 'Hans Zimmerman', 'Liam Murphy', 'Priya Singh', 'Marco Rossi', 'Emma Nielsen', 'Anders Eriksen', 'Isabella Christensen', 'William Olsen', 'Olivia Poulsen', 'Noah Jørgensen'];
-        const state = {
-            currentPage: 'home', // home, approverList, approverDetails, employeeHome, employeeList, newIP, onePager
-            selectedProposalId: null,
-            language: 'EN-English',
-            approverStatusFilter: 'All',
-            isFormDirty: false,
-            navigatingTo: null,
+        // --- HELPER COMPONENTS ---
+        const StatusBadge = ({ status }) => {
+            const statusClass = `status-${status.replace(' for implementation', '')}`;
+            const badgeClasses = `status-badge ${statusClass}`;
+            return <span className={badgeClasses}>{status}</span>;
         };
 
-        // --- DATA FETCHING ---
-        async function loadData() {
-            const url = 'https://raw.githubusercontent.com/MadsBroder/IP/main/ip_data_csv.csv';
-            try {
-                const response = await fetch(`${url}?t=${new Date().getTime()}`);
-                const csvText = await response.text();
-                const parsedData = Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    transform: (value, header) => {
-                        if (value === null || value === undefined) return '';
-                        if (value.toLowerCase() === 'true') return true;
-                        if (value.toLowerCase() === 'false') return false;
-                        if (header === 'categories') return value.split(',').map(s => s.trim());
-                        return value;
-                    }
-                });
-                proposals = parsedData.data;
-                render(); 
-            } catch (error) {
-                console.error("Failed to load or parse CSV data:", error);
-                document.getElementById('app').innerHTML = `<div class="text-center text-red-500">Failed to load proposal data. Please check the console for errors.</div>`;
-            }
-        }
-
-        // --- ROUTING/NAVIGATION ---
-        function navigate(page, proposalId = null) {
-            if (state.isFormDirty) {
-                state.navigatingTo = { page, proposalId };
-                showModal('discardConfirm');
-                return;
-            }
-            state.currentPage = page;
-            state.selectedProposalId = proposalId;
-            state.isFormDirty = false;
-            render();
-        }
-
-        // --- RENDER FUNCTIONS ---
-        function render() {
-            const appContainer = document.getElementById('app');
-            appContainer.innerHTML = ''; 
-
-            switch (state.currentPage) {
-                case 'home':
-                    appContainer.innerHTML = renderHomePage();
-                    break;
-                case 'approverList':
-                    appContainer.innerHTML = renderApproverListPage();
-                    break;
-                case 'approverDetails':
-                    appContainer.innerHTML = renderIPDetailsPage('approver');
-                    break;
-                case 'employeeHome':
-                    appContainer.innerHTML = renderEmployeeHomePage();
-                    break;
-                case 'employeeList':
-                     appContainer.innerHTML = renderEmployeeListPage();
-                    break;
-                case 'newIP':
-                    appContainer.innerHTML = renderNewIPPage();
-                    break;
-                case 'implementedDetails':
-                    appContainer.innerHTML = renderImplementedStatusPage();
-                    break;
-                case 'onePager':
-                    appContainer.innerHTML = renderOnePagerPage();
-                    break;
-            }
-            addEventListeners();
-        }
-
-        function renderHomePage() {
-            return `
-                <div class="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
-                    <div class="text-center w-full max-w-md">
-                        <h1 class="text-2xl font-light">Improvement Proposal System</h1>
-                        <h2 class="text-4xl font-bold my-4">WELCOME ${currentUser.name.toUpperCase()}!</h2>
-                        <div class="my-8">
-                            <i class="fas fa-lightbulb fa-4x text-yellow-300"></i>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div id="approver-view-btn" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-check-circle fa-3x mb-2"></i>
-                                <p>Approver view</p>
-                            </div>
-                            <div id="employee-view-btn" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-user fa-3x mb-2"></i>
-                                <p>Employee view</p>
-                            </div>
-                            <a href="https://app.powerbi.com/Redirect?action=OpenReport&appId=d72cb608-070f-45ff-9271-c0654b7f3f72&reportObjectId=71acc815-077e-4dd1-82ac-7ec0ca318ab8&ctid=dabd5d90-87c2-44c9-93cd-783e03236e40&reportPage=ReportSection&pbi_source=appShareLink&portalSessionId=f2c02284-a535-46c6-832c-187512b0e630" target="_blank" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-chart-line fa-3x mb-2"></i>
-                                <p>IP Tracker</p>
-                            </a>
-                            <a href="https://grundfos.service-now.com/esc" target="_blank" class="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-headset fa-3x mb-2"></i>
-                                <p>Support</p>
-                            </a>
-                        </div>
-                        <div class="mt-8 flex justify-between items-center text-sm">
-                            <select id="language-select" class="bg-transparent border border-white/50 rounded-md px-2 py-1">
-                                <option value="EN-English" ${state.language === 'EN-English' ? 'selected' : ''}>EN-English</option>
-                                <option value="ES-Español" ${state.language === 'ES-Español' ? 'selected' : ''}>ES-Español</option>
-                                <option value="DE-Deutsch" ${state.language === 'DE-Deutsch' ? 'selected' : ''}>DE-Deutsch</option>
-                            </select>
-                            <span>Ver. 1.0</span>
-                        </div>
-                    </div>
+        const ImageDisplay = ({ src, altText, placeholderText }) => {
+            const [imgSrc, setImgSrc] = useState(src);
+            const handleError = () => setImgSrc(`https://placehold.co/400x300/d1d5db/374151?text=${placeholderText.replace(/\s/g, '+')}`);
+            return (
+                <div className="image-container">
+                    {imgSrc ? <img src={imgSrc} alt={altText} onError={handleError} /> : <i className="fas fa-image fa-3x text-gray-400"></i>}
                 </div>
-            `;
-        }
-        
-        function renderApproverListPage() {
-            const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
-            const filteredProposals = state.approverStatusFilter === 'All'
-                ? proposals
-                : proposals.filter(p => p.status.replace(' for implementation', '') === state.approverStatusFilter);
+            );
+        };
 
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full">
-                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 class="text-xl font-bold">Approver</h2>
-                        <button id="home-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
-                    </header>
-                    <div class="card p-4 rounded-b-lg">
-                        <div class="mb-4">
-                            <label for="status-filter" class="block text-sm font-medium text-gray-700">Choose preferred list of IPs:</label>
-                            <select id="status-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                ${statusOptions.map(s => `<option value="${s.replace(' for implementation', '')}" ${state.approverStatusFilter === s.replace(' for implementation', '') ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Just DID IT</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal Title</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    ${filteredProposals.map(p => {
-                                        const statusClass = `status-${p.status.replace(' for implementation', '')}`;
-                                        return `
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button class="view-details-btn icon-btn" data-id="${p.id}"><i class="fas fa-plus"></i></button>
-                                                <button class="print-preview-btn icon-btn ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}" ${p.status !== 'Implemented' ? 'disabled' : ''} data-id="${p.id}"><i class="fas fa-eye"></i></button>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.justDidIt ? 'YES' : 'NO'}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="status-badge ${statusClass}">${p.status}</span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${p.title}</td>
-                                        </tr>
-                                    `}).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderIPDetailsPage(viewType) {
-            const proposal = proposals.find(p => p.id == state.selectedProposalId);
-            if (!proposal) return `<p>Proposal not found.</p>`;
-            
-            const statuses = ['Received', 'Accepted', 'Request for implementation', 'Implemented'];
-            const statusClass = `status-${proposal.status.replace(' for implementation', '')}`;
-
-            const beforeImageContent = proposal.beforeImage 
-                ? `<img src="${proposal.beforeImage}" alt="Before improvement" onerror="this.onerror=null;this.src='https://placehold.co/400x300/d1d5db/374151?text=Image+Not+Found';">`
-                : `<i class="fas fa-image fa-3x text-gray-400"></i>`;
-            
-            const afterImageContent = proposal.afterImage
-                ? `<img src="${proposal.afterImage}" alt="After improvement" onerror="this.onerror=null;this.src='https://placehold.co/400x300/d1d5db/374151?text=Image+Not+Found';">`
-                : `<i class="fas fa-image fa-3x text-gray-400"></i>`;
-
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full">
-                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 class="text-xl font-bold">Approver</h2>
-                         <button id="back-to-list-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
-                    </header>
-                    <div id="ip-details-form" class="card p-4 rounded-b-lg space-y-4">
-                        <div class="border-b pb-2">
-                            <p class="text-sm text-gray-500">IP ${proposal.id}</p>
-                            <h3 class="text-lg font-semibold">${proposal.title}</h3>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div><span class="font-semibold">Proposer:</span> ${proposal.proposer}</div>
-                            <div><span class="font-semibold">Date of proposal:</span> ${proposal.date}</div>
-                            <div><span class="font-semibold">Current status:</span> <span class="status-badge ${statusClass}">${proposal.status}</span></div>
-                            <div class="md:col-span-2"><span class="font-semibold">Categories:</span> ${Array.isArray(proposal.categories) ? proposal.categories.join(', ') : proposal.categories}</div>
-                            <div><span class="font-semibold">Origin:</span> ${proposal.origin}</div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <h4 class="font-semibold mb-1">BEFORE IMPROVEMENT</h4>
-                                <p class="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">${proposal.before}</p>
-                                <div class="mt-2 image-container">${beforeImageContent}</div>
-                            </div>
-                             <div>
-                                <h4 class="font-semibold mb-1">AFTER IMPROVEMENT</h4>
-                                <p class="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">${proposal.after}</p>
-                                <div class="mt-2 image-container">${afterImageContent}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-end space-x-4 border-t pt-4">
-                            <div class="flex-grow">
-                                <label class="block text-sm font-medium text-gray-700">Responsible</label>
-                                <select id="responsible-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                    ${employees.map(e => `<option ${e === proposal.responsible ? 'selected' : ''}>${e}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="flex-grow">
-                                <label class="block text-sm font-medium text-gray-700">New Status</label>
-                                <select id="status-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                    ${statuses.map(s => `<option ${s === proposal.status ? 'selected' : ''}>${s}</option>`).join('')}
-                                </select>
-                            </div>
-                            <button id="save-changes-btn" class="btn-primary"><i class="fas fa-save"></i> Save</button>
-                        </div>
-                    </div>
-                </div>
-                ${renderModal()}
-            `;
-        }
-        
-        function renderEmployeeHomePage() {
-             return `
-                <div class="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
-                    <div class="text-center w-full max-w-md">
-                         <button id="home-btn" class="absolute top-4 left-4 icon-btn bg-white/20 text-white"><i class="fas fa-home"></i></button>
-                        <h1 class="text-2xl font-light">Improvement Proposal System</h1>
-                        <h2 class="text-4xl font-bold my-4">WELCOME ${currentUser.name.toUpperCase()}!</h2>
-                        <div class="my-8">
-                            <i class="fas fa-lightbulb fa-4x text-yellow-300"></i>
-                        </div>
-                        <div class="space-y-4">
-                            <div id="new-ip-btn" class="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-plus-circle fa-3x mb-2"></i>
-                                <p class="text-xl">New IP</p>
-                            </div>
-                            <div id="my-ips-btn" class="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors">
-                                <i class="fas fa-list-alt fa-3x mb-2"></i>
-                                <p class="text-xl">My IPs</p>
-                            </div>
-                        </div>
-                        <div class="mt-8 flex justify-between items-center text-sm">
-                            <select id="language-select" class="bg-transparent border border-white/50 rounded-md px-2 py-1">
-                                <option value="EN-English" ${state.language === 'EN-English' ? 'selected' : ''}>EN-English</option>
-                            </select>
-                            <span>Ver. 1.0</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderEmployeeListPage() {
-            const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
-            const userProposals = proposals.filter(p => p.proposer === currentUser.name);
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full">
-                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 class="text-xl font-bold">My Improvement Proposals</h2>
-                        <div>
-                            <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
-                        </div>
-                    </header>
-                    <div class="card p-4 rounded-b-lg">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700">Filter by status:</label>
-                            <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                ${statusOptions.map(s => `<option>${s}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal Title</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    ${userProposals.map(p => `
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button class="view-details-btn icon-btn" data-id="${p.id}"><i class="fas fa-pencil-alt"></i></button>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.id}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><span class="status-badge status-${p.status.replace(' for implementation', '')}">${p.status}</span></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${p.title}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderNewIPPage() {
-            const newId = Math.floor(100000 + Math.random() * 900000);
-            const categories = ['Environment & Energy', 'Health & Safety', 'Quality', 'Inventory', 'Delivery', 'Product change', 'Process change', 'Cost', 'People'];
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full">
-                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 class="text-xl font-bold">New Improvement Proposal</h2>
-                        <div>
-                            <button id="back-to-employee-home-btn" class="icon-btn bg-white/20 text-white mr-2"><i class="fas fa-arrow-left"></i></button>
-                        </div>
-                    </header>
-                    <form id="new-ip-form" class="card p-4 rounded-b-lg space-y-4">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <div>
-                                <p class="text-sm text-gray-500">IP <span id="new-ip-id">${newId}</span> (Draft)</p>
-                                <input type="text" id="new-ip-title" placeholder="Insert title of the proposal" class="text-lg font-semibold border-gray-300 rounded-md w-full" required>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <label for="just-did-it" class="font-semibold">Just DID IT</label>
-                                <input type="checkbox" id="new-ip-justdidit" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-                                    <div><span class="font-semibold">Proposer:</span> ${currentUser.name}</div>
-                                    <div><span class="font-semibold">Date:</span> ${new Date().toISOString().slice(0,10)}</div>
-                                    <div><span class="font-semibold">Status:</span> Draft</div>
-                                </div>
-                                <div class="mb-4">
-                                    <h4 class="font-semibold mb-2">Categories</h4>
-                                    <div id="new-ip-categories" class="grid grid-cols-2 gap-2 text-sm">${categories.map(cat => `<label class="flex items-center space-x-2"><input type="checkbox" class="rounded" value="${cat}"><span>${cat}</span></label>`).join('')}</div>
-                                </div>
-                                <div class="mb-4">
-                                    <h4 class="font-semibold mb-2">Origin</h4>
-                                    <input type="text" id="new-ip-origin" placeholder="e.g., Assembly Line 1, Bjerringbro" class="w-full border-gray-300 rounded-md" required>
-                                </div>
-                                <div class="mb-4">
-                                    <h4 class="font-semibold mb-2">Potential Saving</h4>
-                                    <input type="text" id="new-ip-saving" placeholder="e.g., 5000 DKK" class="w-full border-gray-300 rounded-md">
-                                </div>
-                            </div>
-                            <div>
-                                <div class="mb-4">
-                                    <h4 class="font-semibold mb-1">BEFORE IMPROVEMENT</h4>
-                                    <textarea id="new-ip-before" rows="3" class="w-full border-gray-300 rounded-md" placeholder="Describe the situation before..." required></textarea>
-                                    <label class="mt-2 image-container cursor-pointer hover:bg-gray-300" for="before-image-input" id="before-image-container">
-                                        <i class="fas fa-camera fa-2x text-gray-500"></i><span class="ml-2">Add Photo</span>
-                                    </label>
-                                    <input type="file" id="before-image-input" class="hidden" accept="image/*">
-                                </div>
-                                <div class="mb-4">
-                                    <h4 class="font-semibold mb-1">AFTER IMPROVEMENT</h4>
-                                    <textarea id="new-ip-after" rows="3" class="w-full border-gray-300 rounded-md" placeholder="Describe the situation after..." required></textarea>
-                                    <label class="mt-2 image-container cursor-pointer hover:bg-gray-300" for="after-image-input" id="after-image-container">
-                                        <i class="fas fa-camera fa-2x text-gray-500"></i><span class="ml-2">Add Photo</span>
-                                    </label>
-                                    <input type="file" id="after-image-input" class="hidden" accept="image/*">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-t pt-4 space-y-2">
-                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Responsible for implementation/approval</label>
-                                <select id="new-ip-responsible" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                    <option value="">Choose employee...</option>
-                                    ${employees.map(e => `<option value="${e}">${e}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="flex justify-end space-x-2">
-                                <button type="button" id="save-draft-btn" class="btn-secondary">Save as Draft</button>
-                                <button type="submit" id="submit-approval-btn" class="btn-primary">Submit for Approval</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            `;
-        }
-        
-        function renderImplementedStatusPage() {
-            const proposal = proposals.find(p => p.id == state.selectedProposalId);
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full">
-                    <header class="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 class="text-xl font-bold">Confirm Implementation</h2>
-                        <button id="back-to-details-btn" class="icon-btn bg-white/20 text-white"><i class="fas fa-arrow-left"></i></button>
-                    </header>
-                    <div id="implementation-form" class="card p-6 rounded-b-lg space-y-6">
-                        <h3 class="text-lg font-semibold text-center">IP ${proposal.id} - ${proposal.title}</h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span class="font-medium">Risk assessment performed:</span>
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center space-x-2"><input type="radio" name="risk" value="false" class="h-4 w-4" checked><span>NO</span></label>
-                                    <label class="flex items-center space-x-2"><input type="radio" name="risk" value="true" class="h-4 w-4"><span>YES</span></label>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span class="font-medium">VPC done (if needed):</span>
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center space-x-2"><input type="radio" name="vpc" value="false" class="h-4 w-4" checked><span>NO</span></label>
-                                    <label class="flex items-center space-x-2"><input type="radio" name="vpc" value="true" class="h-4 w-4"><span>YES</span></label>
-                                </div>
-                            </div>
-                        </div>
-                        ${proposal.potentialSaving ? `
-                        <div class="border-t pt-4 space-y-4">
-                            <h4 class="font-semibold text-gray-800">Finance Validation</h4>
-                            <div class="grid grid-cols-2 gap-4 items-end">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Potential Saving</label>
-                                    <input type="text" value="${proposal.potentialSaving}" class="mt-1 w-full border-gray-300 rounded-md bg-gray-100" readonly>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Finance partner</label>
-                                    <div class="flex items-center space-x-2">
-                                        <select class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                            ${employees.map(e => `<option ${e === proposal.financePartner ? 'selected' : ''}>${e}</option>`).join('')}
-                                        </select>
-                                        <button class="icon-btn text-blue-600"><i class="fas fa-envelope"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span class="font-medium">Validated by finance:</span>
-                                <div class="flex items-center space-x-4">
-                                    <label class="flex items-center space-x-2"><input type="radio" name="finance" value="false" class="h-4 w-4" checked><span>NO</span></label>
-                                    <label class="flex items-center space-x-2"><input type="radio" name="finance" value="true" class="h-4 w-4"><span>YES</span></label>
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                        <div class="border-t pt-4 flex justify-between items-center">
-                            <label class="flex items-center space-x-2 font-medium">
-                                <input type="checkbox" id="best-practice-checkbox" class="h-5 w-5 rounded">
-                                <span>Mark as Best Practice</span>
-                            </label>
-                            <button id="confirm-implementation-btn" class="btn-primary"><i class="fas fa-check"></i> Confirm Implementation</button>
-                        </div>
-                    </div>
-                </div>
-                ${renderModal()}
-            `;
-        }
-        
-        function renderOnePagerPage() {
-            const proposal = proposals.find(p => p.id == state.selectedProposalId);
-            if (!proposal) return `<p>Proposal not found.</p>`;
-
-            return `
-                <div class="bg-gray-100 p-4 min-h-screen w-full relative">
-                     <div class="absolute top-6 right-6 flex space-x-2">
-                        <button class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-file-pdf"></i></button>
-                        <button class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-share-alt"></i></button>
-                        <button id="back-to-list-btn" class="icon-btn bg-white/50 hover:bg-white/70 text-gray-800"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="card p-8 mx-auto max-w-3xl">
-                        <header class="flex justify-between items-start mb-4 border-b-2 border-gray-800 pb-2">
-                            <div>
-                                <h2 class="text-2xl font-bold text-gray-800">IP ${proposal.id}</h2>
-                                <h3 class="text-xl text-gray-600">${proposal.title}</h3>
-                            </div>
-                            <div class="text-right">
-                                <img src="https://www.grundfos.com/content/dam/grundfos/brand-assets/grundfos-logo-blue.svg" alt="Grundfos Logo" class="h-8">
-                                <p class="text-sm text-gray-500 mt-1">${proposal.origin}</p>
-                            </div>
-                        </header>
-                        <main class="grid grid-cols-2 gap-8">
-                            <div>
-                                <h4 class="font-bold text-lg mb-2">BEFORE</h4>
-                                <p class="bg-red-50 p-3 rounded-lg text-gray-700 mb-4 min-h-[100px]">${proposal.before}</p>
-                                ${proposal.beforeImage ? `<img src="${proposal.beforeImage}" class="rounded-lg w-full">` : ''}
-                            </div>
-                             <div>
-                                <h4 class="font-bold text-lg mb-2">AFTER</h4>
-                                <p class="bg-green-50 p-3 rounded-lg text-gray-700 mb-4 min-h-[100px]">${proposal.after}</p>
-                                ${proposal.afterImage ? `<img src="${proposal.afterImage}" class="rounded-lg w-full">` : ''}
-                            </div>
-                        </main>
-                        <footer class="mt-6 border-t pt-4 grid grid-cols-3 gap-4 text-sm">
-                            <div><span class="font-bold">Proposer:</span> ${proposal.proposer}</div>
-                            <div><span class="font-bold">Impact:</span> ${Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
-                            <div><span class="font-bold">Potential Saving:</span> ${proposal.potentialSaving || 'N/A'}</div>
-                            <div class="col-span-3 grid grid-cols-4 gap-2 text-center">
-                                <div class="p-2 rounded ${proposal.riskAssessment ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Risk Assessment</span></div>
-                                <div class="p-2 rounded ${proposal.vpcDone ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">VPC Done</span></div>
-                                <div class="p-2 rounded ${proposal.justDidIt ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Just DID IT</span></div>
-                                <div class="p-2 rounded ${proposal.bestPractice ? 'bg-green-200' : 'bg-gray-200'}"><span class="font-bold">Best Practice</span></div>
-                            </div>
-                        </footer>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderModal() {
-            return `
-                <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-                    <div id="modal-content" class="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm">
-                        <!-- Modal content will be injected here -->
-                    </div>
-                </div>
-            `;
-        }
-
-        function showModal(type, callback) {
-            const overlay = document.getElementById('modal-overlay');
-            const content = document.getElementById('modal-content');
-            
-            let modalHtml = '';
-            switch(type) {
+        const Modal = ({ type, onConfirm, onCancel }) => {
+            if (!type) return null;
+            let content;
+            switch (type) {
                 case 'saveConfirm':
-                    modalHtml = `<h3 class="text-xl font-bold mb-4">Are you sure you want to save the change?</h3><div class="flex justify-center space-x-4"><button id="modal-no" class="btn-secondary">NO</button><button id="modal-yes" class="btn-primary">YES</button></div>`;
+                    content = <><h3 className="text-xl font-bold mb-4">Are you sure?</h3><div className="flex justify-center space-x-4"><button onClick={onCancel} className="btn-secondary">NO</button><button onClick={onConfirm} className="btn-primary">YES</button></div></>;
                     break;
                 case 'discardConfirm':
-                     modalHtml = `<h3 class="text-xl font-bold mb-4">Discard unsaved changes?</h3><div class="flex justify-center space-x-4"><button id="modal-no" class="btn-secondary">NO</button><button id="modal-yes" class="btn-primary">YES</button></div>`;
+                    content = <><h3 className="text-xl font-bold mb-4">Discard unsaved changes?</h3><div className="flex justify-center space-x-4"><button onClick={onCancel} className="btn-secondary">NO</button><button onClick={onConfirm} className="btn-primary">YES</button></div></>;
                     break;
                 case 'saved':
-                    modalHtml = `<i class="fas fa-check-circle text-green-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">Change saved!</h3>`;
+                    content = <><i className="fas fa-check-circle text-green-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Saved!</h3></>;
                     break;
                 case 'implemented':
-                    modalHtml = `<i class="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP implemented!</h3>`;
+                    content = <><i className="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Implemented!</h3></>;
                     break;
                 case 'submitted':
-                    modalHtml = `<i class="fas fa-paper-plane text-blue-500 fa-3x mb-4"></i><h3 class="text-xl font-bold">IP Submitted!</h3>`;
+                    content = <><i className="fas fa-paper-plane text-blue-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Submitted!</h3></>;
                     break;
+                default: content = null;
             }
-            content.innerHTML = modalHtml;
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+            return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm">{content}</div></div>;
+        };
 
-            if (type.includes('Confirm')) {
-                 document.getElementById('modal-no').addEventListener('click', hideModal);
-                 document.getElementById('modal-yes').addEventListener('click', callback);
-            } else {
-                 setTimeout(() => {
-                    hideModal();
-                    if(callback) callback();
-                }, 1500);
-            }
-        }
+        // --- PAGE COMPONENTS ---
+        const HomePage = ({ navigate }) => (
+            <div className="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
+                <div className="text-center w-full max-w-md">
+                    <h1 className="text-2xl font-light">Improvement Proposal System</h1>
+                    <h2 className="text-4xl font-bold my-4">WELCOME JOHN!</h2>
+                    <div className="my-8"><i className="fas fa-lightbulb fa-4x text-yellow-300"></i></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div onClick={() => navigate('approverList')} className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-check-circle fa-3x mb-2"></i><p>Approver view</p></div>
+                        <div onClick={() => navigate('employeeHome')} className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-user fa-3x mb-2"></i><p>Employee view</p></div>
+                        <a href="https://app.powerbi.com/Redirect?action=OpenReport&appId=d72cb608-070f-45ff-9271-c0654b7f3f72&reportObjectId=71acc815-077e-4dd1-82ac-7ec0ca318ab8&ctid=dabd5d90-87c2-44c9-93cd-783e03236e40&reportPage=ReportSection&pbi_source=appShareLink" target="_blank" rel="noopener noreferrer" className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-chart-line fa-3x mb-2"></i><p>IP Tracker</p></a>
+                        <a href="https://grundfos.service-now.com/esc" target="_blank" rel="noopener noreferrer" className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-headset fa-3x mb-2"></i><p>Support</p></a>
+                    </div>
+                    <div className="mt-8 flex justify-between items-center text-sm"><select className="bg-transparent border border-white/50 rounded-md px-2 py-1"><option value="EN-English">EN-English</option></select><span>Ver. 1.0</span></div>
+                </div>
+            </div>
+        );
+        
+        const ApproverListPage = ({ proposals, navigate }) => {
+            const [filter, setFilter] = useState('All');
+            const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
+            const filteredProposals = filter === 'All' ? proposals : proposals.filter(p => p.status.replace(' for implementation', '') === filter);
 
-        function hideModal() {
-            const overlay = document.getElementById('modal-overlay');
-            if (overlay) {
-                overlay.classList.add('hidden');
-                overlay.classList.remove('flex');
-            }
-        }
+            return (
+                <div className="bg-gray-100 p-4 min-h-screen w-full">
+                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 className="text-xl font-bold">Approver</h2>
+                        <button onClick={() => navigate('home')} className="icon-btn bg-white/20 text-white"><i className="fas fa-home"></i></button>
+                    </header>
+                    <div className="card p-4 rounded-b-lg">
+                        <div className="mb-4">
+                            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Choose preferred list of IPs:</label>
+                            <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Just DID IT</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proposal Title</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredProposals.map(p => (
+                                        <tr key={p.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onClick={() => navigate('approverDetails', p.id)} className="icon-btn"><i className="fas fa-plus"></i></button>
+                                                <button onClick={() => navigate('onePager', p.id)} disabled={p.status !== 'Implemented'} className={`icon-btn ml-2 ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}`}><i className="fas fa-eye"></i></button>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.justDidIt ? 'YES' : 'NO'}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><StatusBadge status={p.status} /></td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        const ApproverDetailsPage = ({ proposal, employees, navigate, showModal, handleUpdateProposal, setIsFormDirty, viewMode = false }) => {
+            const [responsible, setResponsible] = useState(proposal.responsible);
+            const [status, setStatus] = useState(proposal.status);
+            const statuses = ['Received', 'Accepted', 'Request for implementation', 'Implemented'];
 
-
-        // --- EVENT LISTENERS ---
-        function addEventListeners() {
-            // Home Page
-            document.getElementById('approver-view-btn')?.addEventListener('click', () => navigate('approverList'));
-            document.getElementById('employee-view-btn')?.addEventListener('click', () => navigate('employeeHome'));
-            document.getElementById('home-btn')?.addEventListener('click', () => navigate('home'));
-
-            // General Navigation
-            document.getElementById('back-to-list-btn')?.addEventListener('click', () => navigate('approverList'));
-            document.getElementById('back-to-employee-home-btn')?.addEventListener('click', () => navigate('employeeHome'));
-            document.getElementById('back-to-details-btn')?.addEventListener('click', () => navigate('approverDetails', state.selectedProposalId));
-
-            // Approver List Filter
-            document.getElementById('status-filter')?.addEventListener('change', (e) => {
-                state.approverStatusFilter = e.target.value;
-                render();
-            });
-
-            // Approver List Buttons
-            document.querySelectorAll('.view-details-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => navigate('approverDetails', e.currentTarget.dataset.id));
-            });
-            document.querySelectorAll('.print-preview-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => navigate('onePager', e.currentTarget.dataset.id));
-            });
-
-            // IP Details Page
-            document.getElementById('save-changes-btn')?.addEventListener('click', () => {
+            const handleSave = () => {
                 showModal('saveConfirm', () => {
-                    const proposal = proposals.find(p => p.id == state.selectedProposalId);
-                    const newStatus = document.getElementById('status-select').value;
-                    
-                    if (newStatus === 'Implemented') {
-                        hideModal();
-                        navigate('implementedDetails', state.selectedProposalId);
+                    if (status === 'Implemented') {
+                        navigate('implementedDetails', proposal.id);
                     } else {
-                        proposal.status = newStatus;
-                        proposal.responsible = document.getElementById('responsible-select').value;
+                        handleUpdateProposal({ ...proposal, responsible, status });
                         showModal('saved', () => navigate('approverList'));
                     }
                 });
-            });
-            
-            // Dirty form check
-            document.querySelectorAll('#ip-details-form select')?.forEach(el => {
-                el.addEventListener('change', () => state.isFormDirty = true);
-            });
+            };
 
+            return (
+                 <div className="bg-gray-100 p-4 min-h-screen w-full">
+                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 className="text-xl font-bold">{viewMode ? 'IP Details' : 'Approver'}</h2>
+                         <button onClick={() => navigate(viewMode ? 'employeeList' : 'approverList')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
+                    </header>
+                    <div className="card p-4 rounded-b-lg space-y-4">
+                        <div className="border-b pb-2">
+                            <p className="text-sm text-gray-500">IP {proposal.id}</p>
+                            <h3 className="text-lg font-semibold">{proposal.title}</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div><span className="font-semibold">Proposer:</span> {proposal.proposer}</div>
+                            <div><span className="font-semibold">Date:</span> {proposal.date}</div>
+                            <div><span className="font-semibold">Status:</span> <StatusBadge status={proposal.status} /></div>
+                            <div className="md:col-span-2"><span className="font-semibold">Categories:</span> {Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
+                            <div><span className="font-semibold">Origin:</span> {proposal.origin}</div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 className="font-semibold mb-1">BEFORE</h4>
+                                <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.before}</p>
+                                <ImageDisplay src={proposal.beforeImage} altText="Before improvement" placeholderText="Before Image"/>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold mb-1">AFTER</h4>
+                                <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.after}</p>
+                                <ImageDisplay src={proposal.afterImage} altText="After improvement" placeholderText="After Image"/>
+                            </div>
+                        </div>
+                        {!viewMode && (
+                            <div className="flex items-end space-x-4 border-t pt-4">
+                                <div className="flex-grow">
+                                    <label className="block text-sm font-medium text-gray-700">Responsible</label>
+                                    <select value={responsible} onChange={e => { setResponsible(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                        {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex-grow">
+                                    <label className="block text-sm font-medium text-gray-700">New Status</label>
+                                    <select value={status} onChange={e => { setStatus(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                        {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <button onClick={handleSave} className="btn-primary"><i className="fas fa-save"></i> Save</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
 
-            // Employee Home
-            document.getElementById('new-ip-btn')?.addEventListener('click', () => navigate('newIP'));
-            document.getElementById('my-ips-btn')?.addEventListener('click', () => navigate('employeeList'));
+        const EmployeeHomePage = ({ navigate }) => (
+            <div className="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
+                <div className="text-center w-full max-w-md relative">
+                    <button onClick={() => navigate('home')} className="absolute top-0 left-0 icon-btn bg-white/20 text-white"><i className="fas fa-home"></i></button>
+                    <h1 className="text-2xl font-light">Improvement Proposal System</h1>
+                    <h2 className="text-4xl font-bold my-4">WELCOME JOHN!</h2>
+                    <div className="my-8"><i className="fas fa-lightbulb fa-4x text-yellow-300"></i></div>
+                    <div className="space-y-4">
+                        <div onClick={() => navigate('newIP')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-plus-circle fa-3x mb-2"></i><p className="text-xl">New IP</p></div>
+                        <div onClick={() => navigate('employeeList')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-list-alt fa-3x mb-2"></i><p className="text-xl">My IPs</p></div>
+                    </div>
+                </div>
+            </div>
+        );
 
-            // --- New IP Page - Image Upload Simulation ---
-            function handleImageUpload(inputId, containerId) {
-                const input = document.getElementById(inputId);
-                if (!input) return;
-                input.addEventListener('change', (event) => {
-                    const file = event.target.files[0];
-                    if (file) {
-                        const container = document.getElementById(containerId);
-                        const imageUrl = URL.createObjectURL(file);
-                        container.innerHTML = `<img src="${imageUrl}" alt="Selected image preview">`;
-                    }
-                });
-            }
-            handleImageUpload('before-image-input', 'before-image-container');
-            handleImageUpload('after-image-input', 'after-image-container');
+        const EmployeeListPage = ({ proposals, currentUser, navigate }) => {
+            const [filter, setFilter] = useState('All');
+            const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
+            const userProposals = proposals.filter(p => p.proposer === currentUser.name);
+            const filteredProposals = filter === 'All' ? userProposals : userProposals.filter(p => p.status.replace(' for implementation', '') === filter);
 
-            // --- New IP Page - Save/Submit Logic ---
-            function saveNewProposal(status) {
+            return (
+                 <div className="bg-gray-100 p-4 min-h-screen w-full">
+                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 className="text-xl font-bold">My Improvement Proposals</h2>
+                        <button onClick={() => navigate('employeeHome')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
+                    </header>
+                    <div className="card p-4 rounded-b-lg">
+                         <div className="mb-4">
+                            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Filter by status:</label>
+                            <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
+                            </select>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredProposals.map(p => (
+                                        <tr key={p.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                {p.status === 'Draft' ? (
+                                                    <button onClick={() => navigate('newIP', p.id)} className="icon-btn"><i className="fas fa-pencil-alt"></i></button>
+                                                ) : (
+                                                    <button onClick={() => navigate('approverDetails', p.id)} className="icon-btn"><i className="fas fa-eye"></i></button>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={p.status} /></td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const NewIPPage = ({ proposal, currentUser, employees, navigate, showModal, handleUpdateProposal }) => {
+            const isEditMode = !!proposal;
+            const [formData, setFormData] = useState(
+                isEditMode ? { ...proposal } : {
+                    title: '', origin: '', before: '', after: '', responsible: '', potentialSaving: '', justDidIt: false, categories: []
+                }
+            );
+            const [beforeImage, setBeforeImage] = useState(isEditMode ? proposal.beforeImage : null);
+            const [afterImage, setAfterImage] = useState(isEditMode ? proposal.afterImage : null);
+            const beforeInputRef = useRef(null);
+            const afterInputRef = useRef(null);
+            const ipId = useRef(isEditMode ? proposal.id : Math.floor(100000 + Math.random() * 900000).toString());
+            const categoriesOptions = ['Environment & Energy', 'Health & Safety', 'Quality', 'Inventory', 'Delivery', 'Product change', 'Process change', 'Cost', 'People'];
+
+            const handleChange = e => {
+                const { name, value, type, checked } = e.target;
+                if (type === 'checkbox' && name === 'categories') {
+                    const newCategories = formData.categories.includes(value)
+                        ? formData.categories.filter(c => c !== value)
+                        : [...formData.categories, value];
+                    setFormData(prev => ({ ...prev, categories: newCategories }));
+                } else {
+                    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+                }
+            };
+
+            const handleImageChange = (e, setImage) => {
+                if (e.target.files && e.target.files[0]) {
+                    setImage(URL.createObjectURL(e.target.files[0]));
+                }
+            };
+
+            const handleSubmit = (status) => {
                 const newProposal = {
-                    id: document.getElementById('new-ip-id').textContent,
-                    title: document.getElementById('new-ip-title').value,
+                    ...formData,
+                    id: ipId.current,
                     proposer: currentUser.name,
-                    date: new Date().toISOString().slice(0,10),
-                    status: status,
-                    justDidIt: document.getElementById('new-ip-justdidit').checked,
-                    origin: document.getElementById('new-ip-origin').value,
-                    before: document.getElementById('new-ip-before').value,
-                    after: document.getElementById('new-ip-after').value,
-                    responsible: document.getElementById('new-ip-responsible').value,
-                    categories: Array.from(document.querySelectorAll('#new-ip-categories input:checked')).map(el => el.value),
-                    beforeImage: document.querySelector('#before-image-container img')?.src || '',
-                    afterImage: document.querySelector('#after-image-container img')?.src || '',
-                    potentialSaving: document.getElementById('new-ip-saving').value, 
-                    financePartner: '', riskAssessment: false, vpcDone: false, validatedByFinance: false, bestPractice: false
+                    date: isEditMode ? proposal.date : new Date().toISOString().slice(0, 10),
+                    status,
+                    beforeImage,
+                    afterImage,
                 };
-                proposals.unshift(newProposal);
+                handleUpdateProposal(newProposal);
                 showModal(status === 'Draft' ? 'saved' : 'submitted', () => navigate('employeeList'));
-            }
+            };
 
-            document.getElementById('new-ip-form')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                saveNewProposal('Received');
-            });
-            
-            document.getElementById('save-draft-btn')?.addEventListener('click', () => {
-                 saveNewProposal('Draft');
-            });
+            return (
+                <div className="bg-gray-100 p-4 min-h-screen w-full">
+                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 className="text-xl font-bold">{isEditMode ? 'Edit Improvement Proposal' : 'New Improvement Proposal'}</h2>
+                        <button onClick={() => navigate('employeeHome')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
+                    </header>
+                    <form onSubmit={e => { e.preventDefault(); handleSubmit('Received'); }} className="card p-4 rounded-b-lg space-y-4">
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <p className="text-sm text-gray-500">IP {ipId.current} ({formData.status || 'Draft'})</p>
+                                <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Insert title of the proposal" className="text-lg font-semibold border-gray-300 rounded-md w-full" required/>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <label htmlFor="justDidIt" className="font-semibold">Just DID IT</label>
+                                <input type="checkbox" name="justDidIt" id="justDidIt" checked={formData.justDidIt} onChange={handleChange} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div className="mb-4">
+                                    <h4 className="font-semibold mb-2">Categories</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        {categoriesOptions.map(cat => (
+                                            <label key={cat} className="flex items-center space-x-2"><input type="checkbox" name="categories" value={cat} checked={formData.categories.includes(cat)} onChange={handleChange} className="rounded"/><span>{cat}</span></label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <input type="text" name="origin" value={formData.origin} onChange={handleChange} placeholder="Origin (e.g., Assembly Line 1)" className="w-full border-gray-300 rounded-md mb-4" required/>
+                                <input type="text" name="potentialSaving" value={formData.potentialSaving} onChange={handleChange} placeholder="Potential Saving (e.g., 5000 DKK)" className="w-full border-gray-300 rounded-md mb-4"/>
+                                <select name="responsible" value={formData.responsible} onChange={handleChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    <option value="">Choose responsible person...</option>
+                                    {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <textarea name="before" value={formData.before} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mb-2" placeholder="Describe situation BEFORE..." required></textarea>
+                                <div className="image-container cursor-pointer" onClick={() => beforeInputRef.current.click()}>
+                                    {beforeImage ? <img src={beforeImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
+                                </div>
+                                <input type="file" ref={beforeInputRef} onChange={e => handleImageChange(e, setBeforeImage)} className="hidden" accept="image/*"/>
+                                
+                                <textarea name="after" value={formData.after} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mt-4 mb-2" placeholder="Describe situation AFTER..." required></textarea>
+                                <div className="image-container cursor-pointer" onClick={() => afterInputRef.current.click()}>
+                                    {afterImage ? <img src={afterImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
+                                </div>
+                                <input type="file" ref={afterInputRef} onChange={e => handleImageChange(e, setAfterImage)} className="hidden" accept="image/*"/>
+                            </div>
+                        </div>
+                        <div className="border-t pt-4 flex justify-end space-x-2">
+                            <button type="button" onClick={() => handleSubmit('Draft')} className="btn-secondary">Save as Draft</button>
+                            <button type="submit" className="btn-primary">Submit for Approval</button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+        
+        // --- MAIN APP COMPONENT ---
+        function App() {
+            const [proposals, setProposals] = useState([]);
+            const [employees, setEmployees] = useState([]);
+            const [currentPage, setCurrentPage] = useState('home');
+            const [selectedProposalId, setSelectedProposalId] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [modal, setModal] = useState({ type: null, onConfirm: null });
+            const [isFormDirty, setIsFormDirty] = useState(false);
+            const [navTarget, setNavTarget] = useState(null);
+            const currentUser = { name: "John" };
 
-
-            // Implemented Status Page
-            document.getElementById('confirm-implementation-btn')?.addEventListener('click', () => {
-                showModal('saveConfirm', () => {
-                    const proposal = proposals.find(p => p.id == state.selectedProposalId);
-                    const form = document.getElementById('implementation-form');
-                    proposal.status = 'Implemented';
-                    proposal.riskAssessment = form.querySelector('input[name="risk"]:checked').value === 'true';
-                    proposal.vpcDone = form.querySelector('input[name="vpc"]:checked').value === 'true';
-                    if(proposal.potentialSaving) {
-                        proposal.validatedByFinance = form.querySelector('input[name="finance"]:checked').value === 'true';
+            useEffect(() => {
+                async function loadData() {
+                    const url = 'https://raw.githubusercontent.com/MadsBroder/IP/main/ip_data_csv.csv';
+                    try {
+                        const response = await fetch(`${url}?t=${new Date().getTime()}`);
+                        const csvText = await response.text();
+                        const parsedData = window.Papa.parse(csvText, {
+                            header: true,
+                            skipEmptyLines: true,
+                            transform: (value, header) => {
+                                if (value === null || value === undefined) return '';
+                                if (value.toLowerCase() === 'true') return true;
+                                if (value.toLowerCase() === 'false') return false;
+                                if (header === 'categories') return value.split(',').map(s => s.trim());
+                                return value;
+                            }
+                        });
+                        setProposals(parsedData.data);
+                        const employeeSet = new Set();
+                        parsedData.data.forEach(p => {
+                            if (p.proposer) employeeSet.add(p.proposer);
+                            if (p.responsible) employeeSet.add(p.responsible);
+                        });
+                        setEmployees(Array.from(employeeSet).sort());
+                    } catch (error) {
+                        console.error("Failed to load or parse CSV data:", error);
+                    } finally {
+                        setLoading(false);
                     }
-                    proposal.bestPractice = form.querySelector('#best-practice-checkbox').checked;
-                    showModal('implemented', () => navigate('approverList'));
-                });
-            });
+                }
+                loadData();
+            }, []);
+            
+            const navigate = (page, proposalId = null) => {
+                if (isFormDirty) {
+                    setNavTarget({ page, proposalId });
+                    showModal('discardConfirm');
+                    return;
+                }
+                setCurrentPage(page);
+                setSelectedProposalId(proposalId);
+                setIsFormDirty(false);
+            };
 
-            // Discard changes modal logic
-            if (state.navigatingTo) {
-                document.getElementById('modal-yes')?.addEventListener('click', () => {
-                    state.isFormDirty = false;
-                    hideModal();
-                    navigate(state.navigatingTo.page, state.navigatingTo.proposalId);
-                    state.navigatingTo = null;
-                });
+            const showModal = (type, onConfirm) => {
+                setModal({ type, onConfirm });
+                if (['saved', 'implemented', 'submitted'].includes(type)) {
+                    setTimeout(() => {
+                        setModal({ type: null, onConfirm: null });
+                        if (onConfirm) onConfirm();
+                    }, 1500);
+                }
+            };
+            const hideModal = () => setModal({ type: null, onConfirm: null });
+
+            const handleUpdateProposal = (updatedProposal) => {
+                const index = proposals.findIndex(p => p.id === updatedProposal.id);
+                const newProposals = [...proposals];
+                if (index > -1) {
+                    newProposals[index] = updatedProposal;
+                } else {
+                    newProposals.unshift(updatedProposal);
+                }
+                setProposals(newProposals);
+            };
+
+            if (loading) {
+                return <div className="max-w-4xl mx-auto flex items-center justify-center min-h-screen"><div id="loader"></div></div>;
             }
+
+            const renderPage = () => {
+                const selectedProposal = proposals.find(p => p.id == selectedProposalId);
+                switch (currentPage) {
+                    case 'home': return <HomePage navigate={navigate} />;
+                    case 'approverList': return <ApproverListPage proposals={proposals} navigate={navigate} />;
+                    case 'approverDetails': return <ApproverDetailsPage proposal={selectedProposal} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} setIsFormDirty={setIsFormDirty} viewMode={selectedProposal?.proposer !== 'John'} />;
+                    case 'employeeHome': return <EmployeeHomePage navigate={navigate} />;
+                    case 'employeeList': return <EmployeeListPage proposals={proposals} currentUser={currentUser} navigate={navigate} />;
+                    case 'newIP': return <NewIPPage proposal={selectedProposal} currentUser={currentUser} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
+                    // case 'implementedDetails': return <ImplementedStatusPage ... />;
+                    // case 'onePager': return <OnePagerPage ... />;
+                    default: return <HomePage navigate={navigate} />;
+                }
+            };
+
+            return (
+                <>
+                    {renderPage()}
+                    <Modal 
+                        type={modal.type} 
+                        onConfirm={() => {
+                            if (modal.onConfirm) modal.onConfirm();
+                            if (modal.type === 'discardConfirm' && navTarget) {
+                                setIsFormDirty(false);
+                                setCurrentPage(navTarget.page);
+                                setSelectedProposalId(navTarget.proposalId);
+                                setNavTarget(null);
+                            }
+                            hideModal();
+                        }} 
+                        onCancel={hideModal} 
+                    />
+                </>
+            );
         }
 
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-        });
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
     </script>
-
 </body>
 </html>
