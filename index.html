@@ -61,6 +61,16 @@
         const { useState, useEffect, useRef } = React;
 
         // --- HELPER COMPONENTS ---
+        const Header = ({ title, onHome, onBack }) => (
+            <header className="bg-sky-800 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-10">
+                <h2 className="text-xl font-bold">{title}</h2>
+                <div className="space-x-2">
+                    <button onClick={onBack} className="icon-btn bg-white/20 text-white hover:bg-white/30"><i className="fas fa-arrow-left"></i></button>
+                    <button onClick={onHome} className="icon-btn bg-white/20 text-white hover:bg-white/30"><i className="fas fa-home"></i></button>
+                </div>
+            </header>
+        );
+
         const StatusBadge = ({ status }) => {
             const statusClass = `status-${status.replace(' for implementation', '')}`;
             const badgeClasses = `status-badge ${statusClass}`;
@@ -122,78 +132,73 @@
                         <div onClick={() => navigate('approverList')} className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-check-circle fa-3x mb-2"></i><p>Approver view</p></div>
                         <div onClick={() => navigate('employeeHome')} className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-user fa-3x mb-2"></i><p>Employee view</p></div>
                         <a href="https://app.powerbi.com/Redirect?action=OpenReport&appId=d72cb608-070f-45ff-9271-c0654b7f3f72&reportObjectId=71acc815-077e-4dd1-82ac-7ec0ca318ab8&ctid=dabd5d90-87c2-44c9-93cd-783e03236e40&reportPage=ReportSection&pbi_source=appShareLink" target="_blank" rel="noopener noreferrer" className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-chart-line fa-3x mb-2"></i><p>IP Tracker</p></a>
-                        <a href="https://grundfos.service-now.com/esc" target="_blank" rel="noopener noreferrer" className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-headset fa-3x mb-2"></i><p>Support</p></a>
+                        <a href="https://companyxyz.service-now.com/esc" target="_blank" rel="noopener noreferrer" className="bg-white/10 p-4 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-headset fa-3x mb-2"></i><p>Support</p></a>
                     </div>
-                    <div className="mt-8 flex justify-between items-center text-sm"><select className="bg-transparent border border-white/50 rounded-md px-2 py-1"><option value="EN-English">EN-English</option></select><span>Ver. 1.0</span></div>
+                    <div className="mt-8 flex justify-between items-center text-sm"><select className="bg-transparent border border-white/50 rounded-md px-2 py-1"><option value="EN-English">EN-English</option></select><span>Ver. 1.1</span></div>
                 </div>
             </div>
         );
         
-        const ApproverListPage = ({ proposals, navigate }) => {
+        const ApproverListPage = ({ proposals, navigate, goBack }) => {
             const [filter, setFilter] = useState('All');
             const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
             const filteredProposals = filter === 'All' ? proposals : proposals.filter(p => p.status.replace(' for implementation', '') === filter);
 
             return (
-                <div className="bg-gray-100 p-4 min-h-screen w-full">
-                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Approver</h2>
-                        <button onClick={() => navigate('home')} className="icon-btn bg-white/20 text-white"><i className="fas fa-home"></i></button>
-                    </header>
-                    <div className="card p-4 rounded-b-lg">
-                        <div className="mb-4">
-                            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Choose preferred list of IPs:</label>
-                            <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
-                            </select>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Just DID IT</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proposal Title</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredProposals.map(p => (
-                                        <tr key={p.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button onClick={() => navigate('approverDetails', p.id)} className="icon-btn"><i className="fas fa-plus"></i></button>
-                                                <button onClick={() => navigate('onePager', p.id)} disabled={p.status !== 'Implemented'} className={`icon-btn ml-2 ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}`}><i className="fas fa-eye"></i></button>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.justDidIt ? 'YES' : 'NO'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><StatusBadge status={p.status} /></td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                <div className="bg-gray-100 min-h-screen w-full">
+                    <Header title="Approver" onHome={() => navigate('home')} onBack={goBack} />
+                    <div className="p-4">
+                        <div className="card p-4 rounded-lg">
+                            <div className="mb-4">
+                                <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Choose preferred list of IPs:</label>
+                                <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Just DID IT</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proposal Title</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredProposals.map(p => (
+                                            <tr key={p.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button onClick={() => navigate('approverDetails', p.id)} className="icon-btn"><i className="fas fa-plus"></i></button>
+                                                    <button onClick={() => navigate('onePager', p.id)} disabled={p.status !== 'Implemented'} className={`icon-btn ml-2 ${p.status !== 'Implemented' ? 'opacity-50 cursor-not-allowed' : ''}`}><i className="fas fa-eye"></i></button>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.justDidIt ? 'YES' : 'NO'}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><StatusBadge status={p.status} /></td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
         
-        const ApproverDetailsPage = ({ proposal, employees, navigate, showModal, handleUpdateProposal, setIsFormDirty, viewMode = false }) => {
+        const ApproverDetailsPage = ({ proposal, employees, navigate, goBack, showModal, handleUpdateProposal, setIsFormDirty, viewMode = false }) => {
             const [responsible, setResponsible] = useState(proposal.responsible);
             const [status, setStatus] = useState(proposal.status);
             const statuses = ['Received', 'Accepted', 'Request for implementation', 'Implemented'];
 
             const handleSave = () => {
                 showModal('saveConfirm', () => {
-                    // We are saving, so the form is no longer "dirty".
                     setIsFormDirty(false); 
-                    
                     if (status === 'Implemented') {
-                        // Navigate to the implementation checklist page
                         navigate('implementedDetails', { proposalId: proposal.id, responsible: responsible });
                     } else {
-                        // Otherwise, just update the proposal and show the saved confirmation
                         handleUpdateProposal({ ...proposal, responsible, status });
                         showModal('saved', () => navigate('approverList'));
                     }
@@ -201,58 +206,57 @@
             };
 
             return (
-                 <div className="bg-gray-100 p-4 min-h-screen w-full">
-                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 className="text-xl font-bold">{viewMode ? 'IP Details' : 'Approver'}</h2>
-                         <button onClick={() => navigate(viewMode ? 'employeeList' : 'approverList')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
-                    </header>
-                    <div className="card p-4 rounded-b-lg space-y-4">
-                        <div className="border-b pb-2">
-                            <p className="text-sm text-gray-500">IP {proposal.id}</p>
-                            <h3 className="text-lg font-semibold">{proposal.title}</h3>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div><span className="font-semibold">Proposer:</span> {proposal.proposer}</div>
-                            <div><span className="font-semibold">Date:</span> {proposal.date}</div>
-                            <div><span className="font-semibold">Status:</span> <StatusBadge status={proposal.status} /></div>
-                            <div className="md:col-span-2"><span className="font-semibold">Categories:</span> {Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
-                            <div><span className="font-semibold">Origin:</span> {proposal.origin}</div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <h4 className="font-semibold mb-1">BEFORE</h4>
-                                <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.before}</p>
-                                <ImageDisplay src={proposal.beforeImage} altText="Before improvement" placeholderText="Before Image"/>
+                 <div className="bg-gray-100 min-h-screen w-full">
+                    <Header title={viewMode ? 'IP Details' : 'Approver'} onHome={() => navigate('home')} onBack={goBack} />
+                    <div className="p-4">
+                        <div className="card p-4 rounded-lg space-y-4">
+                            <div className="border-b pb-2">
+                                <p className="text-sm text-gray-500">IP {proposal.id}</p>
+                                <h3 className="text-lg font-semibold">{proposal.title}</h3>
                             </div>
-                             <div>
-                                <h4 className="font-semibold mb-1">AFTER</h4>
-                                <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.after}</p>
-                                <ImageDisplay src={proposal.afterImage} altText="After improvement" placeholderText="After Image"/>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div><span className="font-semibold">Proposer:</span> {proposal.proposer}</div>
+                                <div><span className="font-semibold">Date:</span> {proposal.date}</div>
+                                <div><span className="font-semibold">Status:</span> <StatusBadge status={proposal.status} /></div>
+                                <div className="md:col-span-2"><span className="font-semibold">Categories:</span> {Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
+                                <div><span className="font-semibold">Origin:</span> {proposal.origin}</div>
                             </div>
-                        </div>
-                        {!viewMode && (
-                            <div className="flex items-end space-x-4 border-t pt-4">
-                                <div className="flex-grow">
-                                    <label className="block text-sm font-medium text-gray-700">Responsible</label>
-                                    <select value={responsible} onChange={e => { setResponsible(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                        {employees.map(e => <option key={e} value={e}>{e}</option>)}
-                                    </select>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="font-semibold mb-1">BEFORE</h4>
+                                    <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.before}</p>
+                                    <ImageDisplay src={proposal.beforeImage} altText="Before improvement" placeholderText="Before Image"/>
                                 </div>
-                                <div className="flex-grow">
-                                    <label className="block text-sm font-medium text-gray-700">New Status</label>
-                                    <select value={status} onChange={e => { setStatus(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                        {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
+                                 <div>
+                                    <h4 className="font-semibold mb-1">AFTER</h4>
+                                    <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded min-h-[60px]">{proposal.after}</p>
+                                    <ImageDisplay src={proposal.afterImage} altText="After improvement" placeholderText="After Image"/>
                                 </div>
-                                <button onClick={handleSave} className="btn-primary"><i className="fas fa-save"></i> Save</button>
                             </div>
-                        )}
+                            {!viewMode && (
+                                <div className="flex items-end space-x-4 border-t pt-4">
+                                    <div className="flex-grow">
+                                        <label className="block text-sm font-medium text-gray-700">Responsible</label>
+                                        <select value={responsible} onChange={e => { setResponsible(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                            {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex-grow">
+                                        <label className="block text-sm font-medium text-gray-700">New Status</label>
+                                        <select value={status} onChange={e => { setStatus(e.target.value); setIsFormDirty(true); }} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <button onClick={handleSave} className="btn-primary"><i className="fas fa-save"></i> Save</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
         };
 
-        const ImplementedStatusPage = ({ proposal, responsible, employees, navigate, showModal, handleUpdateProposal }) => {
+        const ImplementedStatusPage = ({ proposal, responsible, employees, navigate, goBack, showModal, handleUpdateProposal }) => {
             const [riskAssessment, setRiskAssessment] = useState(false);
             const [vpcDone, setVpcDone] = useState(false);
             const [financeValidated, setFinanceValidated] = useState(false);
@@ -266,7 +270,7 @@
                     const updatedProposal = {
                         ...proposal,
                         status: 'Implemented',
-                        responsible, // The responsible person passed from the previous page
+                        responsible,
                         riskAssessment,
                         vpcDone,
                         financeValidated,
@@ -279,51 +283,50 @@
             };
 
             return (
-                <div className="bg-gray-100 p-4 min-h-screen w-full">
-                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 className="text-xl font-bold">Finalize Implementation</h2>
-                        <button onClick={() => navigate('approverDetails', proposal.id)} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
-                    </header>
-                    <div className="card p-4 rounded-b-lg space-y-4">
-                        <div className="border-b pb-2">
-                            <p className="text-sm text-gray-500">IP {proposal.id}</p>
-                            <h3 className="text-lg font-semibold">{proposal.title}</h3>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h4 className="font-bold text-lg mb-2">Implementation Checklist</h4>
-                            <ToggleSwitch label="Risk assessment performed:" checked={riskAssessment} onChange={() => setRiskAssessment(!riskAssessment)} />
-                            <ToggleSwitch label="VPC done (if needed):" checked={vpcDone} onChange={() => setVpcDone(!vpcDone)} />
-                            
-                            {proposal.potentialSaving && (
-                                <div className="mt-4 pt-4 border-t">
-                                    <h5 className="font-semibold">Finance Validation</h5>
-                                    <p className="text-sm text-gray-600 mb-2">Potential Saving: <span className="font-bold">{proposal.potentialSaving}</span></p>
-                                    <ToggleSwitch label="Validated by finance:" checked={financeValidated} onChange={() => setFinanceValidated(!financeValidated)} />
-                                    <div className="flex items-center space-x-2 mt-2">
-                                        <select value={financePartner} onChange={e => setFinancePartner(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                            <option value="">Choose finance partner...</option>
-                                            {employees.map(e => <option key={e} value={e}>{e}</option>)}
-                                        </select>
-                                        <button className="icon-btn text-blue-600 hover:bg-blue-100" onClick={() => alert(`Email notification sent to ${financePartner}`)} disabled={!financePartner}>
-                                            <i className="fas fa-paper-plane"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mt-4 pt-4 border-t">
-                                <label className="flex items-center space-x-3">
-                                    <input type="checkbox" checked={bestPractice} onChange={() => setBestPractice(!bestPractice)} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
-                                    <span className="font-medium text-gray-700">Mark as Best Practice</span>
-                                </label>
+                <div className="bg-gray-100 min-h-screen w-full">
+                    <Header title="Finalize Implementation" onHome={() => navigate('home')} onBack={goBack} />
+                    <div className="p-4">
+                        <div className="card p-4 rounded-lg space-y-4">
+                            <div className="border-b pb-2">
+                                <p className="text-sm text-gray-500">IP {proposal.id}</p>
+                                <h3 className="text-lg font-semibold">{proposal.title}</h3>
                             </div>
-                        </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="font-bold text-lg mb-2">Implementation Checklist</h4>
+                                <ToggleSwitch label="Risk assessment performed:" checked={riskAssessment} onChange={() => setRiskAssessment(!riskAssessment)} />
+                                <ToggleSwitch label="VPC done (if needed):" checked={vpcDone} onChange={() => setVpcDone(!vpcDone)} />
+                                
+                                {proposal.potentialSaving && (
+                                    <div className="mt-4 pt-4 border-t">
+                                        <h5 className="font-semibold">Finance Validation</h5>
+                                        <p className="text-sm text-gray-600 mb-2">Potential Saving: <span className="font-bold">{proposal.potentialSaving}</span></p>
+                                        <ToggleSwitch label="Validated by finance:" checked={financeValidated} onChange={() => setFinanceValidated(!financeValidated)} />
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <select value={financePartner} onChange={e => setFinancePartner(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                                <option value="">Choose finance partner...</option>
+                                                {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                            </select>
+                                            <button className="icon-btn text-blue-600 hover:bg-blue-100" onClick={() => alert(`Email notification sent to ${financePartner}`)} disabled={!financePartner}>
+                                                <i className="fas fa-paper-plane"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
-                        <div className="border-t pt-4 flex justify-end">
-                            <button onClick={handleFinalize} className={`btn-primary ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!isFormComplete}>
-                                <i className="fas fa-check-circle"></i> Confirm Implementation
-                            </button>
+                                <div className="mt-4 pt-4 border-t">
+                                    <label className="flex items-center space-x-3">
+                                        <input type="checkbox" checked={bestPractice} onChange={() => setBestPractice(!bestPractice)} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
+                                        <span className="font-medium text-gray-700">Mark as Best Practice</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4 flex justify-end">
+                                <button onClick={handleFinalize} className={`btn-primary ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!isFormComplete}>
+                                    <i className="fas fa-check-circle"></i> Confirm Implementation
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -359,11 +362,13 @@
                     <div id="one-pager-content" className="max-w-4xl mx-auto bg-white p-8 shadow-lg">
                         <header className="flex justify-between items-center border-b-2 pb-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800">GRUNDFOS</h1>
-                                <p className="text-sm text-gray-500">Possibility in every drop</p>
+                                <h1 className="text-3xl font-bold text-gray-800">CompanyXYZ</h1>
                             </div>
-                             <div className="main-bg text-white p-4 rounded-md">
-                                <i className="fas fa-lightbulb fa-3x"></i>
+                            <div className="main-bg text-white p-2 rounded-md h-16 w-16 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white" className="h-12">
+                                    <path d="M50,5.3c-24.7,0-44.7,20-44.7,44.7S25.3,94.7,50,94.7S94.7,74.7,94.7,50S74.7,5.3,50,5.3z M50,86.7 C30,86.7,13.3,70,13.3,50S30,13.3,50,13.3S86.7,30,86.7,50S70,86.7,50,86.7z"/>
+                                    <path d="M50,27.3c-12.5,0-22.7,10.2-22.7,22.7S37.5,72.7,50,72.7S72.7,62.5,72.7,50S62.5,27.3,50,27.3z M50,64.7 C41.3,64.7,34.7,58,34.7,50S41.3,35.3,50,35.3S65.3,42,65.3,50S58.7,64.7,50,64.7z"/>
+                                </svg>
                             </div>
                         </header>
                         
@@ -415,74 +420,75 @@
             );
         };
 
-        const EmployeeHomePage = ({ navigate }) => (
-            <div className="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
-                <div className="text-center w-full max-w-md relative">
-                    <button onClick={() => navigate('home')} className="absolute top-0 left-0 icon-btn bg-white/20 text-white"><i className="fas fa-home"></i></button>
-                    <h1 className="text-2xl font-light">Improvement Proposal System</h1>
-                    <h2 className="text-4xl font-bold my-4">WELCOME JOHN!</h2>
-                    <div className="my-8"><i className="fas fa-lightbulb fa-4x text-yellow-300"></i></div>
-                    <div className="space-y-4">
-                        <div onClick={() => navigate('newIP')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-plus-circle fa-3x mb-2"></i><p className="text-xl">New IP</p></div>
-                        <div onClick={() => navigate('employeeList')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-list-alt fa-3x mb-2"></i><p className="text-xl">My IPs</p></div>
+        const EmployeeHomePage = ({ navigate, goBack }) => (
+            <div className="flex flex-col h-screen">
+                 <Header title="Employee" onHome={() => navigate('home')} onBack={goBack} />
+                <div className="flex-grow main-bg text-white p-4 flex flex-col items-center justify-center">
+                    <div className="text-center w-full max-w-md">
+                        <h1 className="text-2xl font-light">Improvement Proposal System</h1>
+                        <h2 className="text-4xl font-bold my-4">WELCOME JOHN!</h2>
+                        <div className="my-8"><i className="fas fa-lightbulb fa-4x text-yellow-300"></i></div>
+                        <div className="space-y-4">
+                            <div onClick={() => navigate('newIP')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-plus-circle fa-3x mb-2"></i><p className="text-xl">New IP</p></div>
+                            <div onClick={() => navigate('employeeList')} className="bg-white/10 p-6 rounded-lg text-center cursor-pointer hover:bg-white/20 transition-colors"><i className="fas fa-list-alt fa-3x mb-2"></i><p className="text-xl">My IPs</p></div>
+                        </div>
                     </div>
                 </div>
             </div>
         );
 
-        const EmployeeListPage = ({ proposals, currentUser, navigate }) => {
+        const EmployeeListPage = ({ proposals, currentUser, navigate, goBack }) => {
             const [filter, setFilter] = useState('All');
             const statusOptions = ['All', 'Draft', 'Received', 'Accepted', 'Request for implementation', 'Implemented'];
             const userProposals = proposals.filter(p => p.proposer === currentUser.name);
             const filteredProposals = filter === 'All' ? userProposals : userProposals.filter(p => p.status.replace(' for implementation', '') === filter);
 
             return (
-                 <div className="bg-gray-100 p-4 min-h-screen w-full">
-                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 className="text-xl font-bold">My Improvement Proposals</h2>
-                        <button onClick={() => navigate('employeeHome')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
-                    </header>
-                    <div className="card p-4 rounded-b-lg">
-                         <div className="mb-4">
-                            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Filter by status:</label>
-                            <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
-                            </select>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredProposals.map(p => (
-                                        <tr key={p.id}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                {p.status === 'Draft' ? (
-                                                    <button onClick={() => navigate('newIP', p.id)} className="icon-btn"><i className="fas fa-pencil-alt"></i></button>
-                                                ) : (
-                                                    <button onClick={() => navigate('approverDetails', { proposalId: p.id, fromEmployee: true })} className="icon-btn"><i className="fas fa-eye"></i></button>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={p.status} /></td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                 <div className="bg-gray-100 min-h-screen w-full">
+                    <Header title="My Improvement Proposals" onHome={() => navigate('home')} onBack={goBack} />
+                    <div className="p-4">
+                        <div className="card p-4 rounded-lg">
+                             <div className="mb-4">
+                                <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700">Filter by status:</label>
+                                <select id="status-filter" value={filter} onChange={e => setFilter(e.target.value)} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                    {statusOptions.map(s => <option key={s} value={s.replace(' for implementation', '')}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredProposals.map(p => (
+                                            <tr key={p.id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    {p.status === 'Draft' ? (
+                                                        <button onClick={() => navigate('newIP', p.id)} className="icon-btn"><i className="fas fa-pencil-alt"></i></button>
+                                                    ) : (
+                                                        <button onClick={() => navigate('approverDetails', { proposalId: p.id, fromEmployee: true })} className="icon-btn"><i className="fas fa-eye"></i></button>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={p.status} /></td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{p.title}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        const NewIPPage = ({ proposal, currentUser, employees, navigate, showModal, handleUpdateProposal }) => {
+        const NewIPPage = ({ proposal, currentUser, employees, navigate, goBack, showModal, handleUpdateProposal }) => {
             const isEditMode = !!proposal;
             const [formData, setFormData] = useState(
                 isEditMode ? { ...proposal } : {
@@ -525,71 +531,67 @@
                     afterImage,
                 };
                 
-                // If "Just DID IT" is checked and the action is not "Save as Draft"
                 if (formData.justDidIt && status !== 'Draft') {
                     handleUpdateProposal(newProposal);
-                    // Navigate directly to the implementation checklist
                     navigate('implementedDetails', { proposalId: newProposal.id, responsible: newProposal.responsible });
                 } else {
-                    // Otherwise, follow the standard save/submit flow
                     handleUpdateProposal(newProposal);
                     showModal(status === 'Draft' ? 'saved' : 'submitted', () => navigate('employeeList'));
                 }
             };
 
             return (
-                <div className="bg-gray-100 p-4 min-h-screen w-full">
-                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <h2 className="text-xl font-bold">{isEditMode ? 'Edit Improvement Proposal' : 'New Improvement Proposal'}</h2>
-                        <button onClick={() => navigate('employeeHome')} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
-                    </header>
-                    <form onSubmit={e => { e.preventDefault(); handleSubmit('Received'); }} className="card p-4 rounded-b-lg space-y-4">
-                        <div className="flex justify-between items-center border-b pb-2">
-                            <div>
-                                <p className="text-sm text-gray-500">IP {ipId.current} ({formData.status || 'Draft'})</p>
-                                <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Insert title of the proposal" className="text-lg font-semibold border-gray-300 rounded-md w-full" required/>
+                <div className="bg-gray-100 min-h-screen w-full">
+                    <Header title={isEditMode ? 'Edit Improvement Proposal' : 'New Improvement Proposal'} onHome={() => navigate('home')} onBack={goBack} />
+                    <div className="p-4">
+                        <form onSubmit={e => { e.preventDefault(); handleSubmit('Received'); }} className="card p-4 rounded-lg space-y-4">
+                            <div className="flex justify-between items-center border-b pb-2">
+                                <div>
+                                    <p className="text-sm text-gray-500">IP {ipId.current} ({formData.status || 'Draft'})</p>
+                                    <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Insert title of the proposal" className="text-lg font-semibold border-gray-300 rounded-md w-full" required/>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <label htmlFor="justDidIt" className="font-semibold">Just DID IT</label>
+                                    <input type="checkbox" name="justDidIt" id="justDidIt" checked={formData.justDidIt} onChange={handleChange} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <label htmlFor="justDidIt" className="font-semibold">Just DID IT</label>
-                                <input type="checkbox" name="justDidIt" id="justDidIt" checked={formData.justDidIt} onChange={handleChange} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <div className="mb-4">
-                                    <h4 className="font-semibold mb-2">Categories</h4>
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                        {categoriesOptions.map(cat => (
-                                            <label key={cat} className="flex items-center space-x-2"><input type="checkbox" name="categories" value={cat} checked={formData.categories.includes(cat)} onChange={handleChange} className="rounded"/><span>{cat}</span></label>
-                                        ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold mb-2">Categories</h4>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            {categoriesOptions.map(cat => (
+                                                <label key={cat} className="flex items-center space-x-2"><input type="checkbox" name="categories" value={cat} checked={formData.categories.includes(cat)} onChange={handleChange} className="rounded"/><span>{cat}</span></label>
+                                            ))}
+                                        </div>
                                     </div>
+                                    <input type="text" name="origin" value={formData.origin} onChange={handleChange} placeholder="Origin (e.g., Assembly Line 1)" className="w-full border-gray-300 rounded-md mb-4" required/>
+                                    <input type="text" name="potentialSaving" value={formData.potentialSaving} onChange={handleChange} placeholder="Potential Saving (e.g., 5000 DKK)" className="w-full border-gray-300 rounded-md mb-4"/>
+                                    <select name="responsible" value={formData.responsible} onChange={handleChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                        <option value="">Choose responsible person...</option>
+                                        {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                    </select>
                                 </div>
-                                <input type="text" name="origin" value={formData.origin} onChange={handleChange} placeholder="Origin (e.g., Assembly Line 1)" className="w-full border-gray-300 rounded-md mb-4" required/>
-                                <input type="text" name="potentialSaving" value={formData.potentialSaving} onChange={handleChange} placeholder="Potential Saving (e.g., 5000 DKK)" className="w-full border-gray-300 rounded-md mb-4"/>
-                                <select name="responsible" value={formData.responsible} onChange={handleChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
-                                    <option value="">Choose responsible person...</option>
-                                    {employees.map(e => <option key={e} value={e}>{e}</option>)}
-                                </select>
+                                <div>
+                                    <textarea name="before" value={formData.before} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mb-2" placeholder="Describe situation BEFORE..." required></textarea>
+                                    <div className="image-container cursor-pointer" onClick={() => beforeInputRef.current.click()}>
+                                        {beforeImage ? <img src={beforeImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
+                                    </div>
+                                    <input type="file" ref={beforeInputRef} onChange={e => handleImageChange(e, setBeforeImage)} className="hidden" accept="image/*"/>
+                                    
+                                    <textarea name="after" value={formData.after} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mt-4 mb-2" placeholder="Describe situation AFTER..." required></textarea>
+                                    <div className="image-container cursor-pointer" onClick={() => afterInputRef.current.click()}>
+                                        {afterImage ? <img src={afterImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
+                                    </div>
+                                    <input type="file" ref={afterInputRef} onChange={e => handleImageChange(e, setAfterImage)} className="hidden" accept="image/*"/>
+                                </div>
                             </div>
-                            <div>
-                                <textarea name="before" value={formData.before} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mb-2" placeholder="Describe situation BEFORE..." required></textarea>
-                                <div className="image-container cursor-pointer" onClick={() => beforeInputRef.current.click()}>
-                                    {beforeImage ? <img src={beforeImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
-                                </div>
-                                <input type="file" ref={beforeInputRef} onChange={e => handleImageChange(e, setBeforeImage)} className="hidden" accept="image/*"/>
-                                
-                                <textarea name="after" value={formData.after} onChange={handleChange} rows="3" className="w-full border-gray-300 rounded-md mt-4 mb-2" placeholder="Describe situation AFTER..." required></textarea>
-                                <div className="image-container cursor-pointer" onClick={() => afterInputRef.current.click()}>
-                                    {afterImage ? <img src={afterImage} /> : <><i className="fas fa-camera fa-2x text-gray-500"></i><span className="ml-2">Add Photo</span></>}
-                                </div>
-                                <input type="file" ref={afterInputRef} onChange={e => handleImageChange(e, setAfterImage)} className="hidden" accept="image/*"/>
+                            <div className="border-t pt-4 flex justify-end space-x-2">
+                                <button type="button" onClick={() => handleSubmit('Draft')} className="btn-secondary">Save as Draft</button>
+                                <button type="submit" className="btn-primary">Submit for Approval</button>
                             </div>
-                        </div>
-                        <div className="border-t pt-4 flex justify-end space-x-2">
-                            <button type="button" onClick={() => handleSubmit('Draft')} className="btn-secondary">Save as Draft</button>
-                            <button type="submit" className="btn-primary">Submit for Approval</button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             );
         };
@@ -598,13 +600,14 @@
         function App() {
             const [proposals, setProposals] = useState([]);
             const [employees, setEmployees] = useState([]);
-            const [currentPage, setCurrentPage] = useState('home');
-            const [pageData, setPageData] = useState(null); // Used to pass data between pages
+            const [history, setHistory] = useState([{ page: 'home', data: null }]);
             const [loading, setLoading] = useState(true);
             const [modal, setModal] = useState({ type: null, onConfirm: null });
             const [isFormDirty, setIsFormDirty] = useState(false);
             const [navTarget, setNavTarget] = useState(null);
             const currentUser = { name: "John" };
+
+            const { page: currentPage, data: pageData } = history[history.length - 1];
 
             useEffect(() => {
                 async function loadData() {
@@ -629,7 +632,6 @@
                             if (p.proposer) employeeSet.add(p.proposer);
                             if (p.responsible) employeeSet.add(p.responsible);
                         });
-                        // Add some finance partners for the demo
                         employeeSet.add("Jack Jones");
                         employeeSet.add("Finance Team");
                         setEmployees(Array.from(employeeSet).sort());
@@ -648,9 +650,19 @@
                     showModal('discardConfirm');
                     return;
                 }
-                setCurrentPage(page);
-                setPageData(data);
+                setHistory(prev => [...prev, { page, data }]);
                 setIsFormDirty(false);
+            };
+
+            const goBack = () => {
+                if (isFormDirty) {
+                    setNavTarget('back');
+                    showModal('discardConfirm');
+                    return;
+                }
+                if (history.length > 1) {
+                    setHistory(prev => prev.slice(0, -1));
+                }
             };
 
             const showModal = (type, onConfirm) => {
@@ -680,23 +692,21 @@
             }
 
             const renderPage = () => {
-                // Determine the proposal ID and other navigation data from pageData
                 const proposalId = (typeof pageData === 'object' && pageData !== null) ? pageData.proposalId : pageData;
                 const fromEmployee = (typeof pageData === 'object' && pageData !== null) ? pageData.fromEmployee : false;
                 const selectedProposal = proposals.find(p => p.id == proposalId);
 
                 switch (currentPage) {
                     case 'home': return <HomePage navigate={navigate} />;
-                    case 'approverList': return <ApproverListPage proposals={proposals} navigate={navigate} />;
+                    case 'approverList': return <ApproverListPage proposals={proposals} navigate={navigate} goBack={goBack} />;
                     case 'approverDetails': {
-                        // When navigating from the employee list's view icon, it should be read-only.
                         const isViewMode = fromEmployee;
-                        return <ApproverDetailsPage proposal={selectedProposal} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} setIsFormDirty={setIsFormDirty} viewMode={isViewMode} />;
+                        return <ApproverDetailsPage proposal={selectedProposal} employees={employees} navigate={navigate} goBack={goBack} showModal={showModal} handleUpdateProposal={handleUpdateProposal} setIsFormDirty={setIsFormDirty} viewMode={isViewMode} />;
                     }
-                    case 'employeeHome': return <EmployeeHomePage navigate={navigate} />;
-                    case 'employeeList': return <EmployeeListPage proposals={proposals} currentUser={currentUser} navigate={navigate} />;
-                    case 'newIP': return <NewIPPage proposal={selectedProposal} currentUser={currentUser} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
-                    case 'implementedDetails': return <ImplementedStatusPage proposal={selectedProposal} responsible={pageData.responsible} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
+                    case 'employeeHome': return <EmployeeHomePage navigate={navigate} goBack={goBack} />;
+                    case 'employeeList': return <EmployeeListPage proposals={proposals} currentUser={currentUser} navigate={navigate} goBack={goBack} />;
+                    case 'newIP': return <NewIPPage proposal={selectedProposal} currentUser={currentUser} employees={employees} navigate={navigate} goBack={goBack} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
+                    case 'implementedDetails': return <ImplementedStatusPage proposal={selectedProposal} responsible={pageData.responsible} employees={employees} navigate={navigate} goBack={goBack} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
                     case 'onePager': return <OnePagerPage proposal={proposals.find(p => p.id == pageData)} navigate={navigate} />;
                     default: return <HomePage navigate={navigate} />;
                 }
@@ -711,8 +721,13 @@
                             if (modal.onConfirm) modal.onConfirm();
                             if (modal.type === 'discardConfirm' && navTarget) {
                                 setIsFormDirty(false);
-                                setCurrentPage(navTarget.page);
-                                setPageData(navTarget.data);
+                                if (navTarget === 'back') {
+                                    if (history.length > 1) {
+                                        setHistory(prev => prev.slice(0, -1));
+                                    }
+                                } else {
+                                    setHistory(prev => [...prev, { page: navTarget.page, data: navTarget.data }]);
+                                }
                                 setNavTarget(null);
                             }
                             hideModal();
