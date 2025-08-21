@@ -37,6 +37,21 @@
         .status-Accepted { background-color: #D1FAE5; color: #065F46; }
         .status-Request { background-color: #FEF3C7; color: #92400E; }
         .status-Implemented { background-color: #E0E7FF; color: #3730A3; }
+        /* Custom toggle switch styles */
+        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;}
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #005A9C; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #one-pager-content, #one-pager-content * { visibility: visible; }
+            #one-pager-content { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none; }
+        }
+
     </style>
 </head>
 <body class="bg-gray-100">
@@ -76,7 +91,7 @@
                     content = <><i className="fas fa-check-circle text-green-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Saved!</h3></>;
                     break;
                 case 'implemented':
-                    content = <><i className="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Implemented!</h3></>;
+                    content = <><i className="fas fa-award text-blue-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">IP Implemented!</h3></>;
                     break;
                 case 'submitted':
                     content = <><i className="fas fa-paper-plane text-blue-500 fa-3x mb-4"></i><h3 className="text-xl font-bold">Submitted!</h3></>;
@@ -85,6 +100,16 @@
             }
             return <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm">{content}</div></div>;
         };
+        
+        const ToggleSwitch = ({ label, checked, onChange }) => (
+            <div className="flex items-center justify-between py-2">
+                <span className="font-medium text-gray-700">{label}</span>
+                <label className="toggle-switch">
+                    <input type="checkbox" checked={checked} onChange={onChange} />
+                    <span className="slider"></span>
+                </label>
+            </div>
+        );
 
         // --- PAGE COMPONENTS ---
         const HomePage = ({ navigate }) => (
@@ -161,9 +186,14 @@
 
             const handleSave = () => {
                 showModal('saveConfirm', () => {
+                    // We are saving, so the form is no longer "dirty".
+                    setIsFormDirty(false); 
+                    
                     if (status === 'Implemented') {
-                        navigate('implementedDetails', proposal.id);
+                        // Navigate to the implementation checklist page
+                        navigate('implementedDetails', { proposalId: proposal.id, responsible: responsible });
                     } else {
+                        // Otherwise, just update the proposal and show the saved confirmation
                         handleUpdateProposal({ ...proposal, responsible, status });
                         showModal('saved', () => navigate('approverList'));
                     }
@@ -222,6 +252,169 @@
             );
         };
 
+        const ImplementedStatusPage = ({ proposal, responsible, employees, navigate, showModal, handleUpdateProposal }) => {
+            const [riskAssessment, setRiskAssessment] = useState(false);
+            const [vpcDone, setVpcDone] = useState(false);
+            const [financeValidated, setFinanceValidated] = useState(false);
+            const [bestPractice, setBestPractice] = useState(false);
+            const [financePartner, setFinancePartner] = useState('');
+            
+            const isFormComplete = riskAssessment && vpcDone && (!proposal.potentialSaving || (proposal.potentialSaving && financeValidated));
+
+            const handleFinalize = () => {
+                showModal('saveConfirm', () => {
+                    const updatedProposal = {
+                        ...proposal,
+                        status: 'Implemented',
+                        responsible, // The responsible person passed from the previous page
+                        riskAssessment,
+                        vpcDone,
+                        financeValidated,
+                        bestPractice,
+                        financePartner
+                    };
+                    handleUpdateProposal(updatedProposal);
+                    showModal('implemented', () => navigate('approverList'));
+                });
+            };
+
+            return (
+                <div className="bg-gray-100 p-4 min-h-screen w-full">
+                    <header className="main-bg text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h2 className="text-xl font-bold">Finalize Implementation</h2>
+                        <button onClick={() => navigate('approverDetails', proposal.id)} className="icon-btn bg-white/20 text-white"><i className="fas fa-arrow-left"></i></button>
+                    </header>
+                    <div className="card p-4 rounded-b-lg space-y-4">
+                        <div className="border-b pb-2">
+                            <p className="text-sm text-gray-500">IP {proposal.id}</p>
+                            <h3 className="text-lg font-semibold">{proposal.title}</h3>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="font-bold text-lg mb-2">Implementation Checklist</h4>
+                            <ToggleSwitch label="Risk assessment performed:" checked={riskAssessment} onChange={() => setRiskAssessment(!riskAssessment)} />
+                            <ToggleSwitch label="VPC done (if needed):" checked={vpcDone} onChange={() => setVpcDone(!vpcDone)} />
+                            
+                            {proposal.potentialSaving && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <h5 className="font-semibold">Finance Validation</h5>
+                                    <p className="text-sm text-gray-600 mb-2">Potential Saving: <span className="font-bold">{proposal.potentialSaving}</span></p>
+                                    <ToggleSwitch label="Validated by finance:" checked={financeValidated} onChange={() => setFinanceValidated(!financeValidated)} />
+                                    <div className="flex items-center space-x-2 mt-2">
+                                        <select value={financePartner} onChange={e => setFinancePartner(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md">
+                                            <option value="">Choose finance partner...</option>
+                                            {employees.map(e => <option key={e} value={e}>{e}</option>)}
+                                        </select>
+                                        <button className="icon-btn text-blue-600 hover:bg-blue-100" onClick={() => alert(`Email notification sent to ${financePartner}`)} disabled={!financePartner}>
+                                            <i className="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-4 pt-4 border-t">
+                                <label className="flex items-center space-x-3">
+                                    <input type="checkbox" checked={bestPractice} onChange={() => setBestPractice(!bestPractice)} className="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"/>
+                                    <span className="font-medium text-gray-700">Mark as Best Practice</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-4 flex justify-end">
+                            <button onClick={handleFinalize} className={`btn-primary ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!isFormComplete}>
+                                <i className="fas fa-check-circle"></i> Confirm Implementation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const OnePagerPage = ({ proposal, navigate }) => {
+            if (!proposal) return <div>Loading...</div>;
+            
+            const handlePrint = () => window.print();
+            const handleShare = () => {
+                const subject = `Improvement Proposal: ${proposal.title}`;
+                const body = `Check out this implemented improvement proposal: ${window.location.href}`;
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+
+            const CheckboxDisplay = ({ label, checked }) => (
+                <div className="flex items-center space-x-2">
+                    <div className={`w-6 h-6 border-2 ${checked ? 'bg-blue-600 border-blue-600' : 'border-gray-400'} rounded flex items-center justify-center`}>
+                        {checked && <i className="fas fa-check text-white"></i>}
+                    </div>
+                    <span>{label}</span>
+                </div>
+            );
+
+            return (
+                <div className="bg-gray-100 p-4 min-h-screen">
+                    <div className="fixed top-4 right-4 space-x-2 no-print">
+                        <button onClick={handlePrint} className="btn-primary"><i className="fas fa-print"></i></button>
+                        <button onClick={handleShare} className="btn-primary"><i className="fas fa-share-alt"></i></button>
+                        <button onClick={() => navigate('approverList')} className="btn-secondary"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div id="one-pager-content" className="max-w-4xl mx-auto bg-white p-8 shadow-lg">
+                        <header className="flex justify-between items-center border-b-2 pb-4">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-800">GRUNDFOS</h1>
+                                <p className="text-sm text-gray-500">Possibility in every drop</p>
+                            </div>
+                             <div className="main-bg text-white p-4 rounded-md">
+                                <i className="fas fa-lightbulb fa-3x"></i>
+                            </div>
+                        </header>
+                        
+                        <main className="mt-6">
+                            <div className="text-center mb-6">
+                                <h2 className="text-2xl font-bold">{proposal.title}</h2>
+                                <p className="text-lg text-gray-500">IP {proposal.id}</p>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 text-sm border-y py-4">
+                                <div><span className="font-bold">Origin:</span> {proposal.origin}</div>
+                                <div><span className="font-bold">Proposer:</span> {proposal.proposer}</div>
+                                <div><span className="font-bold">Impact:</span> {Array.isArray(proposal.categories) ? proposal.categories.join(', ') : ''}</div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-8 my-6">
+                                <div>
+                                    <h3 className="text-xl font-semibold border-b-2 border-blue-500 pb-1 mb-2">Before Improvement</h3>
+                                    <p className="text-gray-700 mb-4">{proposal.before}</p>
+                                    <ImageDisplay src={proposal.beforeImage} altText="Before" placeholderText="Before Image" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold border-b-2 border-green-500 pb-1 mb-2">After Improvement</h3>
+                                    <p className="text-gray-700 mb-4">{proposal.after}</p>
+                                    <ImageDisplay src={proposal.afterImage} altText="After" placeholderText="After Image" />
+                                </div>
+                            </div>
+
+                            <footer className="bg-gray-50 p-4 rounded-lg">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                                    <CheckboxDisplay label="Risk assessment" checked={proposal.riskAssessment} />
+                                    <CheckboxDisplay label="VPC done" checked={proposal.vpcDone} />
+                                    <CheckboxDisplay label="Best practice" checked={proposal.bestPractice} />
+                                    <CheckboxDisplay label="Just DID IT" checked={proposal.justDidIt} />
+                                </div>
+                                {proposal.potentialSaving && (
+                                    <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="font-bold">Potential Saving</p>
+                                            <p className="text-lg">{proposal.potentialSaving}</p>
+                                        </div>
+                                        <CheckboxDisplay label="Validated by finance" checked={proposal.financeValidated} />
+                                    </div>
+                                )}
+                            </footer>
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
         const EmployeeHomePage = ({ navigate }) => (
             <div className="min-h-screen main-bg text-white p-4 flex flex-col items-center justify-center">
                 <div className="text-center w-full max-w-md relative">
@@ -273,7 +466,7 @@
                                                 {p.status === 'Draft' ? (
                                                     <button onClick={() => navigate('newIP', p.id)} className="icon-btn"><i className="fas fa-pencil-alt"></i></button>
                                                 ) : (
-                                                    <button onClick={() => navigate('approverDetails', p.id)} className="icon-btn"><i className="fas fa-eye"></i></button>
+                                                    <button onClick={() => navigate('approverDetails', { proposalId: p.id, fromEmployee: true })} className="icon-btn"><i className="fas fa-eye"></i></button>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.id}</td>
@@ -331,8 +524,17 @@
                     beforeImage,
                     afterImage,
                 };
-                handleUpdateProposal(newProposal);
-                showModal(status === 'Draft' ? 'saved' : 'submitted', () => navigate('employeeList'));
+                
+                // If "Just DID IT" is checked and the action is not "Save as Draft"
+                if (formData.justDidIt && status !== 'Draft') {
+                    handleUpdateProposal(newProposal);
+                    // Navigate directly to the implementation checklist
+                    navigate('implementedDetails', { proposalId: newProposal.id, responsible: newProposal.responsible });
+                } else {
+                    // Otherwise, follow the standard save/submit flow
+                    handleUpdateProposal(newProposal);
+                    showModal(status === 'Draft' ? 'saved' : 'submitted', () => navigate('employeeList'));
+                }
             };
 
             return (
@@ -397,7 +599,7 @@
             const [proposals, setProposals] = useState([]);
             const [employees, setEmployees] = useState([]);
             const [currentPage, setCurrentPage] = useState('home');
-            const [selectedProposalId, setSelectedProposalId] = useState(null);
+            const [pageData, setPageData] = useState(null); // Used to pass data between pages
             const [loading, setLoading] = useState(true);
             const [modal, setModal] = useState({ type: null, onConfirm: null });
             const [isFormDirty, setIsFormDirty] = useState(false);
@@ -427,6 +629,9 @@
                             if (p.proposer) employeeSet.add(p.proposer);
                             if (p.responsible) employeeSet.add(p.responsible);
                         });
+                        // Add some finance partners for the demo
+                        employeeSet.add("Jack Jones");
+                        employeeSet.add("Finance Team");
                         setEmployees(Array.from(employeeSet).sort());
                     } catch (error) {
                         console.error("Failed to load or parse CSV data:", error);
@@ -437,14 +642,14 @@
                 loadData();
             }, []);
             
-            const navigate = (page, proposalId = null) => {
+            const navigate = (page, data = null) => {
                 if (isFormDirty) {
-                    setNavTarget({ page, proposalId });
+                    setNavTarget({ page, data });
                     showModal('discardConfirm');
                     return;
                 }
                 setCurrentPage(page);
-                setSelectedProposalId(proposalId);
+                setPageData(data);
                 setIsFormDirty(false);
             };
 
@@ -475,16 +680,24 @@
             }
 
             const renderPage = () => {
-                const selectedProposal = proposals.find(p => p.id == selectedProposalId);
+                // Determine the proposal ID and other navigation data from pageData
+                const proposalId = (typeof pageData === 'object' && pageData !== null) ? pageData.proposalId : pageData;
+                const fromEmployee = (typeof pageData === 'object' && pageData !== null) ? pageData.fromEmployee : false;
+                const selectedProposal = proposals.find(p => p.id == proposalId);
+
                 switch (currentPage) {
                     case 'home': return <HomePage navigate={navigate} />;
                     case 'approverList': return <ApproverListPage proposals={proposals} navigate={navigate} />;
-                    case 'approverDetails': return <ApproverDetailsPage proposal={selectedProposal} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} setIsFormDirty={setIsFormDirty} viewMode={selectedProposal?.proposer !== 'John'} />;
+                    case 'approverDetails': {
+                        // When navigating from the employee list's view icon, it should be read-only.
+                        const isViewMode = fromEmployee;
+                        return <ApproverDetailsPage proposal={selectedProposal} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} setIsFormDirty={setIsFormDirty} viewMode={isViewMode} />;
+                    }
                     case 'employeeHome': return <EmployeeHomePage navigate={navigate} />;
                     case 'employeeList': return <EmployeeListPage proposals={proposals} currentUser={currentUser} navigate={navigate} />;
                     case 'newIP': return <NewIPPage proposal={selectedProposal} currentUser={currentUser} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
-                    // case 'implementedDetails': return <ImplementedStatusPage ... />;
-                    // case 'onePager': return <OnePagerPage ... />;
+                    case 'implementedDetails': return <ImplementedStatusPage proposal={selectedProposal} responsible={pageData.responsible} employees={employees} navigate={navigate} showModal={showModal} handleUpdateProposal={handleUpdateProposal} />;
+                    case 'onePager': return <OnePagerPage proposal={proposals.find(p => p.id == pageData)} navigate={navigate} />;
                     default: return <HomePage navigate={navigate} />;
                 }
             };
@@ -499,7 +712,7 @@
                             if (modal.type === 'discardConfirm' && navTarget) {
                                 setIsFormDirty(false);
                                 setCurrentPage(navTarget.page);
-                                setSelectedProposalId(navTarget.proposalId);
+                                setPageData(navTarget.data);
                                 setNavTarget(null);
                             }
                             hideModal();
